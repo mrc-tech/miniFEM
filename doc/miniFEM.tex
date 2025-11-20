@@ -1,0 +1,68 @@
+\documentclass{article}
+
+\usepackage[a5paper]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\title{miniFEM}
+\author{Andrea Marchi}
+
+\maketitle
+\tableofcontents
+
+\section{Truss 2D}
+
+\section{Truss 3D}
+
+\section{Beam 2D}
+\section{Bema 3D}
+
+
+
+\newpage
+\appendix
+
+\section{Matrice di rotazione}
+
+\subsection{2D}
+\begin{tikzpicture}
+\draw[stealth-stealth](1,0) node[right]{$x$} -- (0,0) -- (0,1) node[right]{$y$};
+\draw[-latex, thick] (0,0) -- (30:2) node[right]{$\mathbf{a}$};
+\draw[-latex, thick] (0,0) -- (60:2) node[right]{$\mathbf{b}$};
+\draw[|->] (30:0.8) arc (30:60:0.8) node[above right,pos=0.5]{$\theta$};
+\end{tikzpicture}
+\begin{tikzpicture}[scale=2]
+\draw[stealth-stealth] (1,0) node[right]{$x$} -- (0,0) -- (0,1) node[left]{$y$};
+\draw[-latex, thick] (0,0) -- (00:0.8) node[above right]{$\mathbf{a}=\begin{bmatrix} 1 \\ 0 \end{bmatrix}$};
+\draw[-latex, thick] (0,0) -- (40:0.8) node[above right]{$\mathbf{b}=\begin{bmatrix} r_1 \\ r_3 \end{bmatrix}$};
+\draw[|->] (00:0.3) arc (00:40:0.3) node[right,pos=0.7]{$\theta$};
+%\draw[|<->|] (0,0) -| (40:0.8);
+\draw[|<->|] (0,-0.1) -- node[below]{$\cos(\theta)$} (0.6,-0.1);
+\draw[|<->|] (-0.1,0) -- node[above,rotate=90]{$\sin(\theta)$} (-0.1,0.5);
+\end{tikzpicture}
+\begin{tikzpicture}[scale=2]
+\draw[stealth-stealth] (1,0) node[right]{$x$} -- (0,0) -- (0,1) node[left]{$y$};
+\draw[-latex, thick] (0,0) -- (90:0.8) node[right]{$\mathbf{a}=\begin{bmatrix} 0 \\ 1 \end{bmatrix}$};
+\draw[-latex, thick] (0,0) -- (130:0.8) node[left]{$\mathbf{b}=\begin{bmatrix} r_2 \\ r_4 \end{bmatrix}$};
+\draw[|->] (90:0.3) arc (90:130:0.3) node[above,pos=0.7]{$\theta$};
+\draw[|<->|] (-0.5,-0.1) -- node[below]{$\sin(\theta)$} (0,-0.1);
+\draw[|<->|] (0.1,0) -- node[below,rotate=90]{$\cos(\theta)$} (0.1,0.6);
+\end{tikzpicture}
+
+
+Mettiamo che vogliamo ruotare il vettore $\mathbf{a}$ di un angolo $\theta$ in senso antiorario trovando un vettore $\mathbf{b}$, tale che
+$$ \mathbf{b} = \mathbf{R} \; \mathbf{a} $$
+dove $\mathbf{R}(\theta)$ è la matrice di rotazione che dipende dall'angolo $\theta$. La matrice $\mathbf{R}$ ha componenti
+$$ \mathbf{R} = \begin{bmatrix} r_1 & r_2 \\ r_3 & r_4 \end{bmatrix} $$
+Per trovare le componenti della matrice $\mathbf{R}$ possiamo imporre delle rotazioni a dei vettori semplici da gestire. In primo luogo lo applichiamo al vettore $\mathbf{a}=[1,0]^T$ il quale, moltiplicato per la matrice $\mathbf{R}$, ci restituisce come risultato la prima colonna ($\mathbf{b}=[r_1,r_3]^T$). Il vettore $\mathbf{a}$ ha lunghezza unitaria e le componenti di $\mathbf{b}$, da banali considerazioni trigonometriche, risultano essere $\mathbf{b}=\begin{bmatrix} \cos(\theta) \\ \sin(\theta) \end{bmatrix}$.
+
+\subsection{3D}
+
+
+
+\end{document}
