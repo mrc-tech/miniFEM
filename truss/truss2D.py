@@ -2,10 +2,10 @@ import json # per importare ed esportare i dati del modello
 import numpy as np
 import matplotlib.pyplot as plt # PER IL DEBUG???
 
-units = "m, kN, kPa, s"
-
 
 # MODELLO --------------------------------------------------------------------
+
+units = "m, kN, kPa, s"
 
 nodes = [
     {'x':0, 'y':0},
