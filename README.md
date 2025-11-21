@@ -14,6 +14,14 @@ minimal *Finite Element Method* calculator
 	- [ ] cercare instabilità numeriche nel codice
 
 - [ ] **beam2D**
+	- [ ] mettere anche il comando `equalDOF` in maniera tale da poter fare anche il caso "truss" qua dentro
 
 - [ ] **tri2D**
+
+- [ ] Altri casi presenti in _Zienkiewicz_
+
+- [ ] Provare a implementare un codice molto semplice in MS-DOS usando `C` e la la libreria di matrici `SLAP`
+	- [ ] truss2D
+ 	- [ ] beam2D
+  	- [ ] tri2D
 
