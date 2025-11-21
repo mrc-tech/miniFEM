@@ -1,0 +1,34 @@
+\documentclass[a4paper]{article}
+\usepackage{tikz}
+\begin{document}
+
+\usetikzlibrary{calc}
+
+
+\begin{tikzpicture}[scale=5]
+% Parametri visualizzazione:
+\def\dispscale{602.2942121781333}
+% Nodi indeformati:
+\node[draw, circle, fill=white, inner sep=2pt, label={[above right]0}] (N0) at (0,0) {};
+\node[draw, circle, fill=white, inner sep=2pt, label={[above right]1}] (N1) at (1,0) {};
+\node[draw, circle, fill=white, inner sep=2pt, label={[above right]2}] (N2) at (0,1) {};
+% Aste indeformate:
+\draw[black, thin] (N0) -- (N1);
+\draw[black, thin] (N1) -- (N2);
+\draw[black, thin] (N0) -- (N2);
+% Spostamenti nodi:
+\node (u0) at (0.0,0.0) {};
+\node (u1) at (4.761904761904763e-05,0.0) {};
+\node (u2) at (0.0002299251011783901,4.761904761904763e-05) {};
+\node[draw, circle, fill=black, inner sep=2pt] (D0) at ($ (N0) + \dispscale*(u0) $) {};
+\node[draw, circle, fill=black, inner sep=2pt] (D1) at ($ (N1) + \dispscale*(u1) $) {};
+\node[draw, circle, fill=black, inner sep=2pt] (D2) at ($ (N2) + \dispscale*(u2) $) {};
+% Vettori di spostamento:
+\draw[lightgray,-latex] (N2) -- (D2);
+% Aste deformate:
+\draw[very thick] (D0) -- (D1);
+\draw[very thick] (D1) -- (D2);
+\draw[very thick] (D0) -- (D2);
+\end{tikzpicture}
+
+\end{document}

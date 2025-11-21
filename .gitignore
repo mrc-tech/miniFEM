@@ -41,7 +41,7 @@
 *.dwo
 
 # LaTeX
-miniFEM.aux
-miniFEM.log
-miniFEM.synctex.gz
-miniFEM.toc
+*.aux
+*.log
+*.synctex.gz
+*.toc
