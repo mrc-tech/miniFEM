@@ -198,44 +198,52 @@ def plot_forces(nodes, forces):
 
         scale = 0.2  # scala visualizzazione
 
-        plt.arrow(x, y, Fx*scale, Fy*scale,
-                  head_width=0.05, head_length=0.07,
+        plt.arrow( x-Fx*scale, y-Fy*scale, Fx*scale, Fy*scale,
+                  head_width=0.02, head_length=0.04,
                   color='red', length_includes_head=True)
-        plt.text(x + Fx*scale, y + Fy*scale,
-                 f"({Fx},{Fy})", color='red')
+        plt.text(x - Fx*scale/2, y - Fy*scale/2, f"({Fx},{Fy})", color='red')
+
+
+import matplotlib.patheffects as path_effects
+def define_path_effect(**kwargs):
+    return [path_effects.Stroke(**kwargs), path_effects.Normal()]
+
 
 
 def plot_element_forces(nodes, element_forces):
-    # trova la forza massima per scalare gli spessori
-    maxN = max(abs(ef['N']) for ef in element_forces)
-    if maxN == 0:
-        maxN = 1
+    maxN = max(abs(ef['N']) for ef in element_forces) or 1
 
+    fig, ax = plt.subplots()
+    
     for ef in element_forces:
         e = ef['element']
-        i = e['i']; j = e['j']
+        i, j = e['i'], e['j']
         N = ef['N']
 
         xi, yi = nodes[i]['x'], nodes[i]['y']
         xj, yj = nodes[j]['x'], nodes[j]['y']
 
-        # colore: rosso = trazione, blu = trazione
-        color = 'red' if N < 0 else 'blue'
+        color = 'blue' if N > 0 else 'red'   # blu trazione, rosso compressione
+        lw = 1 + 6 * abs(N)/maxN
 
-        # spessore variabile
-        lw = 1 + 6 * abs(N) / maxN  # minimo 1, massimo 7
+        ax.plot([xi, xj], [yi, yj], color=color, linewidth=lw)
 
-        plt.plot([xi, xj], [yi, yj], color=color, linewidth=lw)
+        xm, ym = (xi+xj)/2, (yi+yj)/2
+        # ax.text(xm, ym, f"{N:.1f}", color=color, fontsize=9)
 
-        # Etichetta forza N:
-        xm = (xi + xj) / 2
-        ym = (yi + yj) / 2
-        plt.text(xm, ym, f"{N:.1f}", color=color, fontsize=9)
+        ax.text(
+            xm, ym, f"{N:.1f}",
+            fontsize=10,
+            color=color,
+            path_effects=define_path_effect(linewidth=3, foreground="white")
+        )
+
+    ax.set_aspect('equal')
+    
 
 
-
-plot_forces(nodes, forces)
 plot_element_forces(nodes, element_forces)
+plot_forces(nodes, forces)
 
 # VORREI FARE ANCHE CHE SALVA GLI SFORZI SULLE ASTE NEL JSON...
 # ANCHE LE FORZE NEI NODI
