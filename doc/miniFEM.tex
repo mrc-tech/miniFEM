@@ -7,6 +7,7 @@
 \usepackage{tikz}
 
 
+
 \begin{document}
 
 \title{miniFEM}
@@ -29,6 +30,99 @@
 
 \section{Beam 2D}
 \section{Bema 3D}
+
+\section{Tri 2D}
+
+\section*{Teoria del Triangolo a Deformazione Costante (CST)}
+
+\subsection*{1. Definizione e assunzioni}
+L'elemento CST (Constant Strain Triangle) è un elemento finito 2D con 3 nodi (triangolo T3). Si assume che gli spostamenti \(u(x,y)\) e \(v(x,y)\) siano funzioni lineari di \(x\) e \(y\); ciò implica che le deformazioni \(\varepsilon_x\), \(\varepsilon_y\) e \(\gamma_{xy}\) sono costanti sull'intero elemento.  
+Questo elemento è spesso usato in analisi di \emph{plane stress} o \emph{plane strain}.
+
+\subsection*{2. Funzioni di forma}
+Sia \((i), (j), (k)\) i tre nodi del triangolo con coordinate \((x_i,y_i)\), \((x_j,y_j)\), \((x_k,y_k)\). Le funzioni di forma sono:
+
+\[
+N_1(x,y) = a_1 + b_1 x + c_1 y,\quad
+N_2(x,y) = a_2 + b_2 x + c_2 y,\quad
+N_3(x,y) = a_3 + b_3 x + c_3 y.
+\]
+
+I coefficienti \(b_i\) e \(c_i\) si calcolano come:
+
+\[
+\begin{aligned}
+b_1 &= y_j - y_k,\quad &c_1 &= x_k - x_j,\\
+b_2 &= y_k - y_i,\quad &c_2 &= x_i - x_k,\\
+b_3 &= y_i - y_j,\quad &c_3 &= x_j - x_i.
+\end{aligned}
+\]
+
+L’area \(A\) del triangolo è:
+
+\[
+A = \frac{1}{2} \det
+\begin{pmatrix}
+1 & x_i & y_i\\
+1 & x_j & y_j\\
+1 & x_k & y_k
+\end{pmatrix}.
+\]
+
+\subsection*{3. Matrice di deformazione \(B\)}
+La matrice \(B\) (strain-displacement matrix) è data da:
+
+\[
+B = \frac{1}{2A}
+\begin{pmatrix}
+b_1 & 0   & b_2 & 0   & b_3 & 0 \\
+0   & c_1 & 0   & c_2 & 0   & c_3 \\
+c_1 & b_1 & c_2 & b_2 & c_3 & b_3
+\end{pmatrix}
+\]
+
+dove:
+
+- la prima riga corrisponde a \(\varepsilon_x = \partial u / \partial x\),  
+- la seconda a \(\varepsilon_y = \partial v / \partial y\),  
+- la terza a \(\gamma_{xy} = \partial u / \partial y + \partial v / \partial x\).
+
+\subsection*{4. Matrice di rigidezza dell'elemento}
+La rigidezza dell'elemento è:
+
+\[
+K_e = t\, A\, B^\mathrm{T}\, D\, B,
+\]
+
+dove:
+
+\[
+D = \frac{E}{1-\nu^2}
+\begin{pmatrix}
+1 & \nu & 0\\
+\nu & 1 & 0\\
+0 & 0 & \frac{1-\nu}{2}
+\end{pmatrix}
+\]
+
+in condizioni di \emph{plane stress}, con \(E\) modulo di Young, \(\nu\) coefficiente di Poisson, e \(t\) lo spessore dell’elemento.
+
+\subsection*{5. Proprietà e limiti}
+\begin{itemize}
+  \item Le deformazioni e le tensioni risultano \emph{costanti} su tutto l’elemento.  
+  \item L’elemento è semplice e computazionalmente efficiente.  
+  \item Tuttavia, non è in grado di rappresentare gradienti interni di deformazione: per strutture con variazioni di stress importanti, può essere meno accurato rispetto ad elementi di ordine superiore.  
+\end{itemize}
+
+\subsection*{6. Riferimenti}
+\begin{itemize}
+  \item R.T. Haftka, University of Florida, appunti su elementi CST. :contentReference[oaicite:12]{index=12}  
+  \item J.E. Akin, “Constant Strain Triangle, CST” – formulazione esplicita di \(B\). :contentReference[oaicite:13]{index=13}  
+  \item FEA Academy, “The Finite Element Method – Theory in Depth”, formula di \(K_e = t A B^T D B\). :contentReference[oaicite:14]{index=14}  
+  \item Manuale Geostru, “Triangolo a deformazione costante (CST, T3)” (in italiano). :contentReference[oaicite:15]{index=15}  
+\end{itemize}
+
+
 
 
 
