@@ -17,6 +17,8 @@ minimal *Finite Element Method* calculator
 	- [ ] mettere anche il comando `equalDOF` in maniera tale da poter fare anche il caso "truss" qua dentro
 
 - [ ] **tri2D**
+	- [ ] Esempio con il *Bulk modulus* $K$
+	- [ ] provare a fare una modale del bulk modulus e vedere se mi torna con il tank
 
 - [ ] Altri casi presenti in _Zienkiewicz_
 
