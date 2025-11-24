@@ -42,11 +42,12 @@ forces = []
 for iy in range(Ny+1):
     for ix in range(Nx+1):
         id = iy*(Nx+1)+ix
-        fy = (H - nodes[id]['y']) * Delta_x*Delta_y * 8.57
+        fy = Delta_x*Delta_y * 8.57
         if nodes[id]['y'] == 0 or nodes[id]['x'] == 0 or nodes[id]['x'] == B:
             forces.append({'id':id, 'f':[0,-fy/2]}) # GLI SPIGOLI DOVREBBERO ESSERE 1/4 !!!!!!!!!!!!!!!!!!
         else:
-            forces.append({'id':id, 'f':[0,-fy]})
+            y = nodes[id]['y']
+            forces.append({'id':id, 'f':[0,-max((H-y)*0.5,1)*fy]}) # SE QUEL VALORE E' MAGGIORE DI 0.5 COMINCIA A DARE PROBLEMI.....
 # forces = [
     # {'id': 9, 'f':[0,-1]},
     # {'id':10, 'f':[0,-1]}]
