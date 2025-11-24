@@ -124,6 +124,91 @@ in condizioni di \emph{plane stress}, con \(E\) modulo di Young, \(\nu\) coeffic
 
 
 
+\section*{Matrice di elasticità in termini di bulk modulus $K$ e shear modulus $\mu$}
+
+Per un materiale isotropo, la relazione tra le tensioni e le deformazioni può essere scritta in forma matriciale come
+
+\[
+\boldsymbol{\sigma} = \mathbf{D} \, \boldsymbol{\varepsilon}, 
+\quad 
+\boldsymbol{\sigma} = 
+\begin{bmatrix} \sigma_x \\ \sigma_y \\ \tau_{xy} \end{bmatrix},
+\quad
+\boldsymbol{\varepsilon} =
+\begin{bmatrix} \varepsilon_x \\ \varepsilon_y \\ \gamma_{xy} \end{bmatrix},
+\]
+
+dove $\sigma_x, \sigma_y$ sono le tensioni normali lungo gli assi $x$ e $y$, $\tau_{xy}$ è la tensione di taglio, e $\varepsilon_x, \varepsilon_y$ sono le deformazioni normali con $\gamma_{xy}$ la deformazione di taglio ingegnerizzata.
+
+---
+
+\subsection*{Ruolo di $K$ e $\mu$}
+
+\begin{itemize}
+    \item Il \textbf{bulk modulus} $K$ lega la deformazione volumetrica alla pressione idrostatica:
+    \[
+    p = K (\varepsilon_x + \varepsilon_y) \quad \text{(2D)}.
+    \]
+    \item Il \textbf{shear modulus} $\mu$ lega la deformazione deviatorica (taglio) alla tensione di taglio:
+    \[
+    \tau_{xy} = \mu \, \gamma_{xy}.
+    \]
+\end{itemize}
+
+In altre parole, $K$ determina la resistenza del materiale alla compressione/espansione uniforme, mentre $\mu$ determina la resistenza al taglio.
+
+---
+
+\subsection*{Matrice di elasticità in 2D}
+
+La matrice di elasticità può essere scritta come somma della parte volumetrica e della parte deviatorica. In termini di $K$ e $\mu$, una forma comune per 2D (plane strain) è:
+
+\[
+\mathbf{D} =
+\begin{bmatrix}
+K + \frac{4}{3}\mu & K - \frac{2}{3}\mu & 0 \\
+K - \frac{2}{3}\mu & K + \frac{4}{3}\mu & 0 \\
+0 & 0 & \mu
+\end{bmatrix}.
+\]
+
+\begin{itemize}
+    \item Per $\mu = 0$, si ottiene:
+    \[
+    \mathbf{D} =
+    \begin{bmatrix}
+    K & K & 0 \\
+    K & K & 0 \\
+    0 & 0 & 0
+    \end{bmatrix},
+    \]
+    che descrive un materiale puramente volumetrico (senza resistenza al taglio).
+    \item Per $\mu > 0$, la matrice include sia la parte volumetrica che la parte deviatorica, con:
+    \begin{itemize}
+        \item $D_{11}, D_{22} = K + \frac{4}{3}\mu$ (resistenza alla deformazione normale)
+        \item $D_{12} = D_{21} = K - \frac{2}{3}\mu$ (accoppiamento tra deformazioni normali)
+        \item $D_{33} = \mu$ (resistenza alla deformazione di taglio)
+    \end{itemize}
+\end{itemize}
+
+Questa rappresentazione è particolarmente utile quando si vuole costruire la matrice di rigidezza di un elemento finito direttamente dai moduli $K$ e $\mu$, senza passare per il modulo di Young $E$ e il coefficiente di Poisson $\nu$.
+
+\textcolor{red}{Alcuni pongono
+$$ \mathbf{D} = \begin{bmatrix} K+\mu & K-\mu & 0 \\ K-\mu & K+\mu & 0 \\ 0 & 0 & 0\mu \end{bmatrix} $$
+NON SO SE VA BENE
+}
+
+---
+
+\subsection*{Note aggiuntive}
+
+\begin{itemize}
+    \item In 2D, le convenzioni di plane stress e plane strain modificano leggermente i coefficienti numerici davanti a $K$ e $\mu$, ma la struttura generale (parte volumetrica + parte deviatorica) resta la stessa.
+    \item Questa forma è utile anche per materiali quasi incomprimibili, in quanto separa esplicitamente la resistenza volumetrica ($K$) da quella al taglio ($\mu$).
+\end{itemize}
+
+
+
 
 
 \newpage
