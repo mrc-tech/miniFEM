@@ -1,5 +1,5 @@
 # miniFEM
-minimal *Finite Element Method* calculator
+minimal *Finite Element Method* calculator in **Python**
 
 ![Howe](truss/Howe.png)
 
