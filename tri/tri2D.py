@@ -12,7 +12,7 @@ nodes = [
     {'x':1, 'y':0},
     {'x':1, 'y':1}]
 
-elements = [ # definizione dei nodi in senso ANTIORARIO
+elements = [
     {'i':0, 'j':1, 'k':2, 'E':210e3, 'ni':0.3, 't':0.1}]
 
 constraints = [
@@ -45,43 +45,8 @@ K = np.zeros((N*dof, N*dof)) # default: dtype=float64
 # FARE CON LE MATRICI SPARSE (se il numero di nodi è eccessivo)
 
 
-# def add_element_stiffness(element): # aggiunge la matrice di rigidezza dell'elemento alla matrice di rigidezza K (globale)
-    # i = element['i']; j = element['j']; k = element['k'] # id dei nodi di estremità (i, j, k)
-    # xi, yi = nodes[i]['x'], nodes[i]['y']
-    # xj, yj = nodes[j]['x'], nodes[j]['y']
-    # xk, yk = nodes[k]['x'], nodes[k]['y']
-    
-    # E = element['E']
-    # ni = element['ni']
-    # t = element['t'] # spessore dell'elemento
-    
-    # C = np.array([[1, xi, yi], [1, xj, yj], [1, xk, yk]])
-    # # --- CORREZIONE ORIENTAMENTO (la cosa che manca!) ---
-    # if np.linalg.det(C) < 0:
-        # # swap j e k
-        # j, k = k, j
-        # xj, yj, xk, yk = xk, yk, xj, yj
-        # C = np.array([[1, xi, yi], [1, xj, yj], [1, xk, yk]])
-    # IC = np.linalg.inv(C) # inversa della matrice C
-    # A = 0.5 * np.linalg.det(C) # area dell'elemento
-    # B = np.zeros((3,6))
-    # for i in range(3):
-        # B[0, 2*i]     = IC[1, i]
-        # B[1, 2*i + 1] = IC[2, i]
-        # B[2, 2*i]     = IC[2, i]
-        # B[2, 2*i + 1] = IC[1, i]
-    
-    # D = (E/(1-ni*ni)) * np.array([[1, ni, 0], [ni, 1, 0], [0, 0, (1-ni)/2]]) # plane stress
-    
-    # ke = (B.T @ D @ B) * A*t # matrice di rigidezza dell'elemento (ke = B^T D B det(C)*t/2) ("A @ B" è un modo semplice per "np.matmul(A,B)")
-    
-    # i0 = i*dof+0; i1 = i*dof+1; j0 = j*dof+0; j1 = j*dof+1 # i0 rappresenta la componente x del nodo i, mentre i1 la componente y del nodo i
-    # K[i0,i0] += ke[0,0]; K[i0,i1] += ke[0,1]; K[i0,j0] += ke[0,2]; K[i0,j1] += ke[0,3]
-    # K[i1,i0] += ke[1,0]; K[i1,i1] += ke[1,1]; K[i1,j0] += ke[1,2]; K[i1,j1] += ke[1,3]
-    # K[j0,i0] += ke[2,0]; K[j0,i1] += ke[2,1]; K[j0,j0] += ke[2,2]; K[j0,j1] += ke[2,3]
-    # K[j1,i0] += ke[3,0]; K[j1,i1] += ke[3,1]; K[j1,j0] += ke[3,2]; K[j1,j1] += ke[3,3]
 
-def add_element_stiffness_2(element):
+def add_element_stiffness(element):
     """
     Aggiunge la matrice di rigidezza dell'elemento triangolare 2D (CST) alla matrice globale K
     """
@@ -133,7 +98,7 @@ def create_forces(forces): # crea il vettore delle forze applicate
 
 
 f = create_forces(forces)
-for e in elements: add_element_stiffness_2(e) # assembla la matrice di rigidezza K
+for e in elements: add_element_stiffness(e) # assembla la matrice di rigidezza K
 for c in constraints: add_constraint(c) # aggiunge i vincoli (sempre alla matrice K)
 u = np.linalg.solve(K,f) # trova gli spostamenti invertendo la matrice K (uguale a "u = np.linalg.inv(K) @ f", ma meno efficiente e meno numericamente stabile)
 
@@ -147,11 +112,64 @@ for i,_ in enumerate(nodes):
 print('spostamenti:\n', u)
 # ASSEMBLA DI NUOVO LA MATRICE K PER CALCOLARE LE FORZE....
 K = np.zeros((N*dof, N*dof))
-for e in elements: add_element_stiffness_2(e)
+for e in elements: add_element_stiffness(e)
 forze = K @ u
 print('forze:\n', forze)
 
-# CALCOLARE LE FORZE NELLE ASTE........
+# CALCOLARE LE TENSIONI NEGLI ELEMENTI........
+
+
+
+def compute_stress_criteria(elements):
+    for e in elements:
+        i, j, k = e['i'], e['j'], e['k']
+        xi, yi = nodes[i]['x'], nodes[i]['y']
+        xj, yj = nodes[j]['x'], nodes[j]['y']
+        xk, yk = nodes[k]['x'], nodes[k]['y']
+        
+        E = e['E']
+        ni = e['ni']
+        t = e['t']
+        
+        A = abs((xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj)) / 2)
+        b1, b2, b3 = yj - yk, yk - yi, yi - yj
+        c1, c2, c3 = xk - xj, xi - xk, xj - xi
+        B = (1/(2*A)) * np.array([
+            [b1,  0, b2,  0, b3,  0],
+            [ 0, c1,  0, c2,  0, c3],
+            [c1, b1, c2, b2, c3, b3]
+        ])
+        D = (E/(1-ni*ni)) * np.array([[1, ni, 0], [ni, 1, 0], [0, 0, (1-ni)/2]])
+        
+        # vettore spostamenti locale
+        ue = np.array([
+            nodes[i]['u'], nodes[i]['v'],
+            nodes[j]['u'], nodes[j]['v'],
+            nodes[k]['u'], nodes[k]['v']
+        ]).reshape(-1,1)
+        
+        sigma = D @ B @ ue
+        sigma_x, sigma_y, tau_xy = sigma.flatten()
+        
+        # Von Mises
+        sigma_vm = np.sqrt(sigma_x**2 - sigma_x*sigma_y + sigma_y**2 + 3*tau_xy**2)
+        
+        # Tresca (plane stress)
+        sigma_1 = 0.5*(sigma_x + sigma_y) + np.sqrt(((sigma_x - sigma_y)/2)**2 + tau_xy**2) # sforzo principale 1
+        sigma_2 = 0.5*(sigma_x + sigma_y) - np.sqrt(((sigma_x - sigma_y)/2)**2 + tau_xy**2) # sforzo principale 2
+        tresca = max(abs(sigma_1 - sigma_2), abs(sigma_1), abs(sigma_2))
+        
+        e['sigma'] = {'sigma_x': sigma_x, 'sigma_y': sigma_y, 'tau_xy': tau_xy,
+                      'von_mises': sigma_vm, 'tresca': tresca}
+
+
+compute_stress_criteria(elements)
+
+for idx, e in enumerate(elements):
+    print(f"Elemento {idx}: {e['sigma']}")
+
+
+
 
 
 
@@ -188,6 +206,4 @@ plt.show()
         # plt.text(j, i, str(K[i, j]), ha='center', va='center', color='white') # mostra anche i valori
 # plt.colorbar()  # aggiunge la scala dei valori
 # plt.show()
-
-
 
