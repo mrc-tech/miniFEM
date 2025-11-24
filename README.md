@@ -1,6 +1,8 @@
 # miniFEM
 minimal *Finite Element Method* calculator
 
+![Howe](truss/Howe.png)
+
 
 # ToDo
 
