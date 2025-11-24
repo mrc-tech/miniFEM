@@ -9,8 +9,8 @@ units = "m, kN, kPa, Mg, s"
 
 H = 2 # altezza
 B = 3 # base
-Nx = 3 # numero di suddivisioni lungo x
-Ny = 2 # numero di suddivisioni lungo y
+Nx = 30 # numero di suddivisioni lungo x
+Ny = 20 # numero di suddivisioni lungo y
 Delta_x = B/Nx # distanza tra nodi lungo x
 Delta_y = H/Ny # distanza tra nodi lungo y
 
@@ -25,11 +25,11 @@ for iy in range(Ny):
         i = (Nx+1)*(iy+0) + ix+0
         j = (Nx+1)*(iy+0) + ix+1
         k = (Nx+1)*(iy+1) + ix+1
-        elements.append({'i':i, 'j':j, 'k':k, 'K':2.2e3, 'mu':0.001, 't':1})
+        elements.append({'i':i, 'j':j, 'k':k, 'K':2.2e3, 'mu':0.00001, 't':1})
         i = (Nx+1)*(iy+0) + ix+0
         j = (Nx+1)*(iy+1) + ix+0
         k = (Nx+1)*(iy+1) + ix+1
-        elements.append({'i':i, 'j':j, 'k':k, 'K':2.2e3, 'mu':0.001, 't':1})
+        elements.append({'i':i, 'j':j, 'k':k, 'K':2.2e3, 'mu':0.00001, 't':1})
 
 constraints = []
 for i in range(Nx+1): constraints.append({'id':i, 'u':True, 'v':True}) # piastra di base
@@ -37,10 +37,16 @@ for i in range(Ny): # pareti laterali
     constraints.append({'id':(Nx+1)*i+1*Nx+1, 'u':True, 'v':False})
     constraints.append({'id':(Nx+1)*i+2*Nx+1, 'u':True, 'v':False})
 
+
 forces = []
 for iy in range(Ny+1):
     for ix in range(Nx+1):
-        forces.append({'id':iy*(Nx+1)+ix, 'f':[0,-1]})
+        id = iy*(Nx+1)+ix
+        fy = (H - nodes[id]['y']) * Delta_x*Delta_y * 8.57
+        if nodes[id]['y'] == 0 or nodes[id]['x'] == 0 or nodes[id]['x'] == B:
+            forces.append({'id':id, 'f':[0,-fy/2]}) # GLI SPIGOLI DOVREBBERO ESSERE 1/4 !!!!!!!!!!!!!!!!!!
+        else:
+            forces.append({'id':id, 'f':[0,-fy]})
 # forces = [
     # {'id': 9, 'f':[0,-1]},
     # {'id':10, 'f':[0,-1]}]
@@ -135,12 +141,17 @@ for i,_ in enumerate(nodes):
     nodes[i]['v'] = u[i*dof+1].item()
 
 
-print('spostamenti:\n', u)
+# print('spostamenti:\n', u)
 # ASSEMBLA DI NUOVO LA MATRICE K PER CALCOLARE LE FORZE....
 K = np.zeros((N*dof, N*dof))
 for e in elements: add_element_stiffness(e)
 forze = K @ u
-print('forze:\n', forze)
+# print('forze:\n', forze)
+for i in range(N):
+    nodes[i]['fx'] = forze[i*dof].item()
+    if nodes[i]['x'] == 0: print(nodes[i]['y'], nodes[i]['fx'])
+
+
 
 # CALCOLARE LE TENSIONI NEGLI ELEMENTI........
 
@@ -155,17 +166,17 @@ with open('tri2D_model_2.json', 'w', encoding='utf-8') as f: json.dump(model, f,
 # PLOT -------------------------------------------------------------------- per il debug??..........................
 
 # indeformata:
-for e in elements: plt.plot([nodes[e['i']]['x'], nodes[e['j']]['x'], nodes[e['k']]['x'], nodes[e['i']]['x']], [nodes[e['i']]['y'], nodes[e['j']]['y'], nodes[e['k']]['y'], nodes[e['i']]['y']], '-ok')
+for e in elements: plt.plot([nodes[e['i']]['x'], nodes[e['j']]['x'], nodes[e['k']]['x'], nodes[e['i']]['x']], [nodes[e['i']]['y'], nodes[e['j']]['y'], nodes[e['k']]['y'], nodes[e['i']]['y']], '-o',color='lightgray')
 # STAMPARE ANCHE GLI ASSI LOCALI (almeno il vettore che va da "i" a "j")
 # deformata:
 if 'u' in nodes[0]: # controlla se ci sono gli spostamenti da mostrare
     mul = 100 # scala che moltiplica gli spostamenti (multiplier)
     for e in elements:
-        plt.plot([nodes[e['i']]['x']+mul*nodes[e['i']]['u'], nodes[e['j']]['x']+mul*nodes[e['j']]['u'], nodes[e['k']]['x']+mul*nodes[e['k']]['u'], nodes[e['i']]['x']+mul*nodes[e['i']]['u']], [nodes[e['i']]['y']+mul*nodes[e['i']]['v'], nodes[e['j']]['y']+mul*nodes[e['j']]['v'], nodes[e['k']]['y']+mul*nodes[e['k']]['v'], nodes[e['i']]['y']+mul*nodes[e['i']]['v']], '-or')
-    for i,n in enumerate(nodes):
-        scale = 0.2 # scala visualizzazione
-        plt.arrow(n['x']+mul*n['u'], n['y']+mul*n['v'], forze[i*dof+0].item()*scale, forze[i*dof+1].item()*scale, head_width=0.02, head_length=0.04, color='red', length_includes_head=True)
-        # plt.text(nodes[f['id']]['x'] + f['f'][0]*scale, nodes[f['id']]['y'] + f['f'][1]*scale, f"({f['f'][0]},{f['f'][1]})", color='red')
+        plt.plot([nodes[e['i']]['x']+mul*nodes[e['i']]['u'], nodes[e['j']]['x']+mul*nodes[e['j']]['u'], nodes[e['k']]['x']+mul*nodes[e['k']]['u'], nodes[e['i']]['x']+mul*nodes[e['i']]['u']], [nodes[e['i']]['y']+mul*nodes[e['i']]['v'], nodes[e['j']]['y']+mul*nodes[e['j']]['v'], nodes[e['k']]['y']+mul*nodes[e['k']]['v'], nodes[e['i']]['y']+mul*nodes[e['i']]['v']], '-ok')
+    # for i,n in enumerate(nodes):
+        # scale = 0.2 # scala visualizzazione
+        # plt.arrow(n['x']+mul*n['u'], n['y']+mul*n['v'], forze[i*dof+0].item()*scale, forze[i*dof+1].item()*scale, head_width=0.02, head_length=0.04, color='red', length_includes_head=True)
+        # # plt.text(nodes[f['id']]['x'] + f['f'][0]*scale, nodes[f['id']]['y'] + f['f'][1]*scale, f"({f['f'][0]},{f['f'][1]})", color='red')
 plt.show()
 
 
