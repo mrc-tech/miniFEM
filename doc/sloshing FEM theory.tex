@@ -1,0 +1,206 @@
+% LaTeX document detailing sloshing FEM theory
+\documentclass{article}
+\usepackage{amsmath, amssymb, bm, geometry}
+\geometry{margin=2cm}
+\usepackage{tikz}
+
+\title{Finite Element Formulation for Linear Sloshing in a Rectangular Tank}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This document outlines the theoretical foundations for the finite element method (FEM) applied to linear sloshing of an incompressible, inviscid fluid inside a rigid container. The formulation is based on potential flow theory and its linearization for small-amplitude free-surface oscillations.
+
+\section{Governing Equations}
+For an incompressible and inviscid fluid, the velocity field is expressed through a scalar potential:
+\begin{equation}
+    \bm{v} = \nabla \phi,
+\end{equation}
+where $\phi(x,y,t)$ is the velocity potential. Incompressibility requires
+\begin{equation}
+    \nabla^2 \phi = 0 \quad \text{in the fluid domain}.
+\end{equation}
+
+The pressure field follows from the linearized Bernoulli equation:
+\begin{equation}
+    p' = -\rho \frac{\partial \phi}{\partial t} - \rho g \, \eta,
+\end{equation}
+where $\eta(x,t)$ is the vertical displacement of the free surface.
+
+\section{Boundary Conditions}
+\subsection{Rigid Walls}
+On the walls and bottom, the fluid cannot cross the boundary:
+\begin{equation}
+    \frac{\partial \phi}{\partial n} = 0.
+\end{equation}
+
+\subsection{Linearized Free-Surface Boundary Conditions}
+Two boundary conditions apply on the free surface ($y=H$):
+
+\begin{enumerate}
+    \item Kinematic condition:
+    \begin{equation}
+        \frac{\partial \eta}{\partial t} = \frac{\partial \phi}{\partial y}.
+    \end{equation}
+
+    \item Dynamic condition:
+    \begin{equation}
+        \frac{\partial \phi}{\partial t} + g \, \eta = 0.
+    \end{equation}
+\end{enumerate}
+
+Combining the two yields a single evolution equation for $\eta$:
+\begin{equation}
+    \frac{\partial^2 \eta}{\partial t^2} + g \, \frac{\partial \phi}{\partial y} = 0.
+\end{equation}
+
+\section{Reduction to a Free-Surface FEM Problem}
+For small-amplitude sloshing, it is common to eliminate $\phi$ and derive a boundary integral or a reduced free-surface FEM equation. A classical approach leads to the eigenvalue problem:
+
+\begin{equation}
+    \bm{K} \bm{\eta} = \omega^2 \bm{M} \bm{\eta},
+\end{equation}
+where $\bm{\eta}$ is the nodal vector of free-surface elevations.
+
+The matrix $\bm{K}$ comes from gravitational restoring effects:
+\begin{equation}
+    K_{ij} = \rho g \int_{A_e} \nabla N_i \cdot \nabla N_j ~ dA,
+\end{equation}
+with $N_i$ the shape functions of triangular CST elements.
+
+The mass matrix, assuming lumping, is
+\begin{equation}
+    M_{ii} = \rho \frac{A_e}{3},
+\end{equation}
+for each node of a triangular element of area $A_e$.
+
+\section{Element Matrices}
+For a triangular element with nodes $(i,j,k)$, area
+\begin{equation}
+    A = \frac{1}{2} | x_i(y_j - y_k) + x_j(y_k - y_i) + x_k(y_i - y_j) |,
+\end{equation}
+the gradients of the shape functions are expressed using standard CST coefficients:
+\begin{align}
+    b_1 &= y_j - y_k, & c_1 &= x_k - x_j, \\
+    b_2 &= y_k - y_i, & c_2 &= x_i - x_k, \\
+    b_3 &= y_i - y_j, & c_3 &= x_j - x_i.
+\end{align}
+
+The stiffness matrix becomes:
+\begin{equation}
+    K_{ab} = \rho g \, t \frac{b_a b_b + c_a c_b}{4 A},
+\end{equation}
+where $t$ is the out-of-plane thickness.
+
+The lumped mass matrix is:
+\begin{equation}
+    M = \rho t A \begin{bmatrix}
+        1/3 & 0 & 0 \\
+        0 & 1/3 & 0 \\
+        0 & 0 & 1/3
+    \end{bmatrix}.
+\end{equation}
+
+\section{Eigenvalue Problem and Modal Analysis}
+The generalized eigenproblem
+\begin{equation}
+    \bm{K} \bm{\eta} = \omega^2 \bm{M} \bm{\eta}
+\end{equation}
+leads to natural frequencies
+\begin{equation}
+    f = \frac{\omega}{2 \pi}
+\end{equation}
+and periods
+\begin{equation}
+    T = \frac{1}{f}.
+\end{equation}
+
+The eigenvectors describe the shape of the free-surface oscillations. The pressure fluctuations inside the fluid follow:
+\begin{equation}
+    p'(x,y) = \rho g \, \eta(x).
+\end{equation}
+
+\section{References}
+\begin{itemize}
+    \item Faltinsen, O. M., \textit{Sea Loads on Ships and Offshore Structures}. Cambridge Univ. Press, 1990.
+    \item Mei, C. C., \textit{The Applied Dynamics of Ocean Surface Waves}. World Scientific, 1989.
+    \item Bathe, K.-J., \textit{Finite Element Procedures}. Prentice Hall, 1996.
+    \item Zienkiewicz, O. C., Taylor, R. L., \textit{The Finite Element Method}. McGraw-Hill.
+\end{itemize}
+
+\textcolor{red}{\Huge VERSIONE SUCCESSIVA}
+
+\section{Governing Equations (Expanded)}
+For an incompressible, inviscid fluid, the flow is irrotational and can be described by a velocity potential $\phi(x,y,t)$:
+\begin{equation}
+\bm{v} = \nabla \phi,
+\end{equation}
+where $\bm{v}$ is the fluid velocity vector. The incompressibility condition leads to Laplace's equation in the fluid domain $\Omega$:
+\begin{equation}
+\nabla^2 \phi = \frac{\partial^2 \phi}{\partial x^2} + \frac{\partial^2 \phi}{\partial y^2} = 0, \quad \text{in } \Omega.
+\end{equation}
+
+
+On the rigid boundaries (walls and bottom), the normal component of velocity must vanish:
+\begin{equation}
+\frac{\partial \phi}{\partial n} = 0.
+\end{equation}
+
+
+At the free surface $y = H$, the boundary conditions are linearized for small-amplitude oscillations:
+\begin{enumerate}
+\item Kinematic condition:
+\begin{equation}
+\frac{\partial \eta}{\partial t} = \frac{\partial \phi}{\partial y} \Big|_{y=H},
+\end{equation}
+where $\eta(x,t)$ is the vertical displacement of the free surface.
+
+
+\item Dynamic condition:
+\begin{equation}
+\frac{\partial \phi}{\partial t} + g \, \eta = 0, \quad y = H.
+\end{equation}
+\end{enumerate}
+
+
+By differentiating the dynamic condition with respect to time and substituting the kinematic condition, one obtains a single second-order differential equation for the free-surface displacement $\eta(x,t)$:
+\begin{equation}
+\frac{\partial^2 \eta}{\partial t^2} + g \, \frac{\partial \phi}{\partial y} \Big|_{y=H} = 0.
+\end{equation}
+
+
+In a variational (FEM) formulation, this is typically converted into a weak form over the fluid domain, leading to a generalized eigenvalue problem for the nodal free-surface elevations:
+\begin{equation}
+\bm{K} \bm{\eta} = \omega^2 \bm{M} \bm{\eta},
+\end{equation}
+where $\bm{\eta}$ is the vector of nodal elevations (spostamento verticale del pelo libero), $\bm{M}$ is the mass matrix, and $\bm{K}$ is the stiffness matrix derived from the gravitational restoring force.
+
+
+\section{Connection Between PDE and FEM Matrices}
+The stiffness matrix $\bm{K}$ represents the discrete version of the linear operator associated with the free-surface restoring force:
+\begin{equation}
+K_{ij} = \rho g \int_{A_e} \nabla N_i \cdot \nabla N_j ~ dA,
+\end{equation}
+where $N_i$ and $N_j$ are the element shape functions, and $A_e$ is the element area. Essentially, $\nabla N_i \cdot \nabla N_j$ arises from the weak form of the Laplace equation projected onto the free-surface displacement field $\eta$.
+
+
+The mass matrix $\bm{M}$ represents the inertial term $\partial^2 \eta/\partial t^2$ in the PDE, typically assembled in lumped or consistent form:
+\begin{equation}
+M_{ii} = \rho t A_e / 3 \quad \text{for each node of a triangular element}.
+\end{equation}
+
+
+Thus, the FEM eigenvalue problem directly approximates the PDE for the free-surface displacement. The eigenvectors provide the mode shapes of the surface, and the eigenvalues determine the natural sloshing frequencies.
+
+
+
+
+
+
+
+
+
+\end{document}
