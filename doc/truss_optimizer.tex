@@ -1,0 +1,30 @@
+\documentclass[]{article}
+
+\usepackage[a5paper]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+
+
+\begin{document}
+
+\title{Truss optimizer}
+\author{Andrea Marchi}
+\maketitle
+
+
+L'idea e` quella che iterativamente il FEM trova la sezione necessaria $A$ per ottenere la tensione obiettivo $\sigma_{ob}$.
+Risolto per la prima volta il sistema, l'elemento $i$ e` sottoposto alla tensione
+$$ \sigma_i(t_1) = \frac{N_i(t_1)}{A_i(t_1)} $$
+dove $t_1$ indica che stiamo considerando il primo istante, l'istante $1$.
+A questo punto dobbiamo modificare l'area degli elementi $A_i$ per avvicinarci alla tensione obiettivo
+$$ A_i(t_2) = \frac{|N_i(t_1)|}{\sigma_{ob}} \geq A_{\min} $$
+Per evitare che in aste completamente scariche si ha un'area nulla bisogna comunque avere un vincolo di area minima $A_{\min}$.
+Una volta settate queste nuove aree il sistema viene nuovamente risolto per trovare i nuovi sforzi nelle aste. Questo, in generale, porta a sforzi diversi e quindi aree diverse per le iterazioni successive.
+Le iterazioni sono portate avanti finche` il sistema non arriva a convergenza. Questo puo` misurarsi in termini di differenze della somma delle $\sigma$ al quadrato per tutti gli elementi e vedendo la differenza tra una iterazione e l'altra. Quindi il programma termina il calcolo quando
+$$ \sum_{i=1}^N \left[\sigma_i(t_j) - \sigma_{ob} \right]^2 \leq \mathrm{Tol} $$
+
+Ovviamente i sistemi isostatici non hanno bisogno di iterazioni e le aree dopo la prima iterazione sono gia` quelle definitive.
+
+
+
+\end{document}
