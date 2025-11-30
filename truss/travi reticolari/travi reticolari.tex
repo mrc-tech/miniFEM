@@ -1,0 +1,138 @@
+\documentclass[a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+
+\usetikzlibrary{calc}
+
+
+
+\begin{document}
+
+\title{Travi reticolari}
+\author{Andrea Marchi}
+
+\maketitle
+
+\textcolor{red}{Per ogni trave fare confronto in termini di:
+\begin{itemize}
+\item abbassamento in mezzeria
+\item massimo sforzo normale nelle aste
+\item istogramma con lo sforzo normale nelle aste (ordinato)
+\item rapporto tra aste compresse e aste tese
+\end{itemize}
+}
+
+
+
+
+
+
+\section{Trave francese (Howe)}
+
+Questo tipo di trave reticolare e` caratterizzato dall'avere le diagonali tese. Il vantaggio e` che le aste di parete compresse sono quelle verticali, le quali hanno una lunghezza minore rispetto a quelle diagonali e, quindi, esibiscono instabilita` piu` difficilmente.
+
+\input{Howe1.tex}
+
+
+
+
+
+\section{Espressioni approssimate}
+
+\subsection{Abbassamento in mezzeria}
+
+Vorrei verificare se la freccia in mezzeria e` simile a quello di una trave semplicemente appoggiata con un carico concentrato in mezzeria pari al carico totale. Una trave per cui la sezione e` pari a due aree pari alle aree dei correnti distanti quanto l'altezza della trave.
+Per una sezione simile l'inerzia e' pari a
+$$ I = A \left(\frac{H}{2}\right)^2 + A \left(\frac{H}{2}\right)^2 = \frac{AH^2}{2} $$
+L'abbassamento in mezzeria di una trave semplicemente appoggiata con carico concentrato $P$ in mezzeria e`
+$$ f = \frac{PL^3}{48EI} = \frac{pL^4}{24EAH^2} $$
+in cui abbiamo sostituito l'inerzia trovata in precedenza e il carico distribuito $p = P/L$.
+
+\textcolor{red}{Mi viene in mente che questo approccio non tiene conto della deformabilita` delle aste di parete. Infatti dipende solamente dall'area dei correnti... Forse funziona solamente se le aste di parete hanno un'area particolare...}
+
+per la seguente analisi i dati sono
+\begin{itemize}
+\item lunghezza $L=16$ m
+\item peso distribuito $p=10$ kN/m
+\item $E=210$ GPa
+\item $A=0.1$ m$^2$
+\end{itemize}
+\begin{tikzpicture}
+\begin{axis}[
+    title={Abbassamento mezzeria trave Howe ($L=16$)},
+    xlabel={Numero elementi corrente superiore},
+    ylabel={$\frac{\text{Abbassamento}}{\frac{pL^4}{24EAH^2}}$ [-]},
+%    xmin=0, xmax=100,
+%    ymin=0, ymax=120,
+    xtick={4,6,8,10,12,14,16,18,20},
+%    ytick={0,20,40,60,80,100,120},
+    legend pos=north west,
+    ymajorgrids=true,
+    grid style=dashed,
+]
+
+\addplot[
+	color=black,
+	mark=square,
+	]
+	coordinates {
+    ( 4, 1.153682)
+	( 6, 0.894344)
+	( 8, 0.805197)
+	(10, 0.763126)
+	(12, 0.739849)
+	(14, 0.725764)
+	(16, 0.716800)
+	(18, 0.710963)
+	(20, 0.707168)
+	};
+
+\addplot[
+	color=black,
+	mark=o,
+	]
+	coordinates {
+    ( 4, 1.26344812)
+	( 6, 1.00885416)
+	( 8, 0.93165681)
+	(10, 0.90444171)
+	(12, 0.89760085)
+	(14, 0.90093923)
+	(16, 0.91006674)
+	(18, 0.92279501)
+	(20, 0.93791425)
+	};
+
+\addplot[
+	color=black,
+	mark=diamond,
+	]
+	coordinates {
+    ( 4, 1.49511718)
+	( 6, 1.26589151)
+	( 8, 1.22919419)
+	(10, 1.24837239)
+	(12, 1.29092893)
+	(14, 1.34541756)
+	(16, 1.40680814)
+	(18, 1.47254932)
+	(20, 1.54121004)
+	};
+  
+\legend{$H = 1$ m, $H = 2$ m, $H = 3$ m}
+	
+\end{axis}
+\end{tikzpicture}
+
+La trave con $H=3$ m ha un rapporto lunghezza/altezza di 5.33.
+
+
+
+
+
+
+\end{document}
