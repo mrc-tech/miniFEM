@@ -1,0 +1,344 @@
+\documentclass{article}
+
+\usepackage[a5paper, margin=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{tikz}
+
+
+
+% Impostazioni per il codice Python
+\lstset{
+    basicstyle=\ttfamily\small,
+    numbers=left,
+    numberstyle=\color{gray},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showtabs=false,
+    showstringspaces=false,
+    captionpos=b,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{blue},
+    breaklines=true,
+    frame=single,
+    frameround=tttt
+}
+
+\title{\bfseries Simulazione di Fluidi Confinati con Elementi Finiti Misti $u-p$}
+\author{Analisi basata sulla formulazione di tipo ANSYS FLUID79/80}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Questo documento presenta un'analisi dettagliata e i riferimenti chiave per la simulazione di un \textbf{fluido incomprimibile confinato} (es. acqua in un serbatoio) mediante il Metodo degli Elementi Finiti (FEM), utilizzando una \textbf{formulazione mista Spostamento-Pressione ($u-p$)}. Tale approccio è concettualmente simile a quello implementato negli elementi \texttt{FLUID79} e \texttt{FLUID80} di ANSYS, particolarmente efficaci per l'analisi di interazione fluido-struttura (FSI) in regime acustico o dinamico a bassa frequenza.
+\end{abstract}
+
+\section{Introduzione alla Formulazione $u-p$ per FSI Confinato}
+
+Per un fluido incomprimibile (o quasi-incomprimibile), la relazione costitutiva fondamentale (che lega gli "sforzi" o la pressione alle "deformazioni" o alla variazione di volume) è:$$\mathbf{\sigma} = -p\mathbf{I} + \mathbf{\tau}$$dove $\mathbf{\sigma}$ è il tensore degli sforzi, $p$ la pressione e $\mathbf{\tau}$ il tensore degli sforzi deviatorici (dovuti a viscosità).
+
+La modellazione di fluidi incomprimibili confinati con metodi basati sugli spostamenti nodali $\mathbf{u}_f$ e sulla pressione $p$ appartiene alla classe delle \textbf{formulazioni miste}. La necessità di questa formulazione deriva dal vincolo cinematico di \textbf{incomprimibilità}:
+%
+$$ \nabla \cdot \mathbf{u}_f = 0 $$
+%
+Nei problemi FSI confinati, si assume che il fluido sia trattato in coordinate \textbf{Lagrangiane} (similmente alla struttura), il che produce un sistema matriciale simmetrico, ideale per l'analisi strutturale modale e transitoria. La pressione $p$ funge da \textbf{moltiplicatore di Lagrange} per imporre il vincolo di volume costante.
+
+Certamente. Hai toccato il punto cruciale della formulazione mista $u-p$: come l'equazione differenziale che impone l'incomprimibilità (l'operatore $\nabla \cdot (\cdot)$) si traduce nella matrice di accoppiamento $\mathbf{Q}$ (o $\mathbf{C}$ a seconda della notazione) e nel blocco $\mathbf{S}$ (che è nullo per l'incomprimibilità perfetta) all'interno del sistema agli elementi finiti.Il passaggio si basa sul Principio dei Lavori Virtuali (o Principio di D'Alembert per l'equilibrio dinamico) e sull'uso della pressione come moltiplicatore di Lagrange.Di seguito sono riportati i passaggi chiave per passare dalla condizione di incomprimibilità $\nabla \cdot \mathbf{u}_f = 0$ alla matrice di rigidezza accoppiata, focalizzandoci sul contributo del fluido.1. La Formulazione Variazionale (o Debole)Il Metodo agli Elementi Finiti (FEM) si basa sulla trasformazione delle equazioni differenziali in una forma integrale, detta formulazione debole o variazionale.A. Equilibrio del Momento (Equazione del Moto)Per il dominio fluido $\Omega_f$, l'equilibrio del momento (trascurando viscosità e termini dinamici per ora, concentrandoci solo sul contributo della pressione come sforzo) è dato da:$$\int_{\Omega_f} \delta \mathbf{u}_f \cdot \left( \nabla \cdot \mathbf{\sigma}_f + \mathbf{b} \right) d\Omega = 0$$dove $\mathbf{\sigma}_f$ è il tensore degli sforzi e $\mathbf{b}$ sono le forze di massa (es. gravità).Per un fluido ideale (non viscoso) e \textbf{incomprimibile}, l'unica componente di sforzo è la pressione, quindi:$$\mathbf{\sigma}_f = -p \mathbf{I}$$Sostituendo e integrando per parti (teorema della divergenza) si ottiene il contributo della pressione alla matrice di rigidezza del dominio $\mathbf{u}_f$:$$\int_{\Omega_f} \mathbf{\epsilon}(\delta \mathbf{u}_f) : (-p \mathbf{I}) d\Omega + \text{(altri termini)} = 0$$Dove $\mathbf{\epsilon}(\delta \mathbf{u}_f)$ è il tensore di deformazione virtuale. L'espressione si semplifica a:$$\int_{\Omega_f} p \, \mathbf{\epsilon}_v(\delta \mathbf{u}_f) d\Omega = \int_{\Omega_f} p \, (\nabla \cdot \delta \mathbf{u}_f) d\Omega$$Questo termine è responsabile dell'accoppiamento tra il campo di pressione $p$ e il campo di spostamento $\mathbf{u}_f$.B. Vincolo di Incomprimibilità (Equazione di Continuità)La condizione $\nabla \cdot \mathbf{u}_f = 0$ viene imposta nella formulazione debole moltiplicandola per una variazione virtuale della pressione, $\delta p$, e integrando su $\Omega_f$:$$\int_{\Omega_f} \delta p \, (\nabla \cdot \mathbf{u}_f) d\Omega = 0$$Questa è la seconda equazione accoppiata del sistema.2. Discretizzazione agli Elementi FinitiProcediamo alla discretizzazione dei campi $\mathbf{u}_f$ e $p$ all'interno di un elemento $\Omega_e$, utilizzando le rispettive funzioni di forma (Shape Functions):Spostamento (Lineare $P_1$): $\mathbf{u}_f = \sum_{i=1}^{N_u} N_i^u \mathbf{u}_i$Pressione (Costante $P_0$): $p = \sum_{j=1}^{N_p} N_j^p p_j$A. Discretizzazione del Vincolo di IncomprimibilitàConsideriamo l'Equazione B (vincolo di incomprimibilità):$$\int_{\Omega_e} \delta p \, (\nabla \cdot \mathbf{u}_f) d\Omega = 0$$Sostituendo le interpolazioni:$$\int_{\Omega_e} \left( \sum_{j=1}^{N_p} N_j^p \delta p_j \right) \cdot \left( \sum_{i=1}^{N_u} \nabla \cdot (N_i^u \mathbf{u}_i) \right) d\Omega = 0$$Poiché $\delta p_j$ è arbitrario, possiamo estrarre i termini discreti:$$\sum_{i=1}^{N_u} \left[ \int_{\Omega_e} N_j^p \, (\nabla \cdot (N_i^u \mathbf{u}_i)) d\Omega \right] = 0 \quad \text{per } j = 1, \dots, N_p$$Questo termine, che accoppia lo spostamento $\mathbf{u}_i$ con la pressione $p_j$, definisce la matrice $\mathbf{Q}^T$ (che è un blocco rettangolare) e si trova nella riga corrispondente ai gradi di libertà della pressione.In forma matriciale, questo blocco è $\mathbf{Q}^T \mathbf{u}_f = \mathbf{0}$, dove:$$(\mathbf{Q}^T)_{ji} = \int_{\Omega_e} N_j^p \, (\nabla \cdot N_i^u) d\Omega$$B. Discretizzazione dell'Equilibrio del Momento (Contributo Pressione)Consideriamo il contributo di pressione $P$ all'Equazione A (equilibrio):$$\int_{\Omega_e} \delta \mathbf{u}_f \cdot \nabla p \, d\Omega = \int_{\Omega_e} p \, (\nabla \cdot \delta \mathbf{u}_f) d\Omega$$Sostituendo le interpolazioni:$$\sum_{i=1}^{N_u} \sum_{j=1}^{N_p} \delta \mathbf{u}_i \left[ \int_{\Omega_e} p_j N_i^u \, (\nabla \cdot N_j^p) d\Omega \right] = 0$$Questo definisce la matrice $\mathbf{Q}$ (che è la trasposta della matrice $\mathbf{Q}^T$ definita sopra) e si trova nella riga corrispondente ai gradi di libertà dello spostamento.$$(\mathbf{Q})_{ij} = \int_{\Omega_e} N_i^u \, (\nabla \cdot N_j^p) d\Omega$$Per simmetria, si ha che $\mathbf{Q}_{ij} = (\mathbf{Q}^T)_{ji}$.3. Matrice Elementare AccoppiataAssembliamo questi contributi nel sistema elementare statico ($\mathbf{K}_{\text{shear}} \approx \mathbf{0}$ e $\mathbf{S} = \mathbf{0}$):Il sistema elementare accoppiato $\mathbf{K}_e$ (che collega i gradi di libertà $\mathbf{u}_f$ e $p$) è:$$ \mathbf{K}e = \begin{bmatrix}\mathbf{K}{\text{shear}} & \mathbf{Q} \\mathbf{Q}^T & \mathbf{S}\end{bmatrix} \approx \begin{bmatrix}\mathbf{0} & \mathbf{Q} \\mathbf{Q}^T & \mathbf{0}\end{bmatrix} $$Dettaglio del Calcolo per l'Elemento $P_1/P_0$ (2D Triangolare)Nell'elemento $P_1/P_0$, la funzione di forma della pressione $N_j^p$ è costante ($N_p^1 = 1$) su tutto l'elemento.Divergenza del campo di spostamento:$$\nabla \cdot N_i^u = \frac{\partial N_i^u}{\partial x} + \frac{\partial N_i^u}{\partial y}$$Per un elemento $P_1$ (lineare), i gradienti $\frac{\partial N_i^u}{\partial x}$ e $\frac{\partial N_i^u}{\partial y}$ sono costanti su tutto l'elemento.Calcolo della Matrice $\mathbf{Q}^T$ (1 riga, 6 colonne):$$(\mathbf{Q}^T)_i = \int_{\Omega_e} (1) \cdot \left( \frac{\partial N_i^u}{\partial x} + \frac{\partial N_i^u}{\partial y} \right) d\Omega$$Poiché i gradienti sono costanti, l'integrale è semplicemente:$$(\mathbf{Q}^T)_i = \left( \frac{\partial N_i^u}{\partial x} + \frac{\partial N_i^u}{\partial y} \right) \cdot A_e$$dove $A_e$ è l'area dell'elemento.La matrice $\mathbf{Q}$ (6 righe, 1 colonna) è semplicemente la trasposta di $\mathbf{Q}^T$.Questo processo mostra come l'imposizione del vincolo di incomprimibilità (Equazione B) genera la matrice $\mathbf{Q}^T$ (e per dualità, $\mathbf{Q}$) che lega i gradi di libertà dello spostamento $\mathbf{u}_f$ alla variabile di pressione $p$.
+
+Hai ragione, le matrici $\mathbf{K}_{\text{shear}}$, $\mathbf{Q}$, $\mathbf{Q}^T$ e $\mathbf{S}$ (se non nulla) rappresentano solo i blocchi di rigidezza e accoppiamento a livello elementare. Per ottenere l'equazione di equilibrio globale dell'intero sistema continuo (fluido + struttura), è necessario:Assemblare tutte le matrici elementari nella matrice globale del sistema.Aggiungere i termini dinamici (massa e smorzamento) e i vettori di forza.Applicare le Condizioni al Contorno (vincoli) e le Condizioni di Interfaccia.Ecco i passaggi chiave per arrivare all'equazione di equilibrio finale (spesso usata per l'analisi dinamica, o "problema agli autovalori" per l'analisi modale) che coinvolge sia la struttura che il fluido.
+\subsection{ Assemblaggio Globale}
+ 
+ Si definiscono i vettori di incognite (gradi di libertà, DoF) del sistema globale come la combinazione dei DoF della struttura ($\mathbf{u}_s$), dello spostamento del fluido ($\mathbf{u}_f$) e della pressione del fluido ($p$):$$\mathbf{D} = \begin{Bmatrix} \mathbf{u}_s \\ \mathbf{u}_f \\ p \end{Bmatrix}$$L'assemblaggio porta alla matrice di sistema globale $\mathbf{K}_{\text{globale}}$ e al vettore delle forze globali $\mathbf{F}_{\text{globale}}$.Matrice di Rigidezza e Accoppiamento Globale ($\mathbf{K}_{\text{tot}}$)L'assemblaggio delle matrici elementari produce la matrice $\mathbf{K}_{\text{tot}}$, che ha la seguente struttura a blocchi, dove ogni blocco rappresenta l'interazione tra i rispettivi campi di incognite:$$\mathbf{K}_{\text{tot}} = \begin{bmatrix}
+\mathbf{K}_{s} & \mathbf{K}_{sf} & \mathbf{0} \\
+\mathbf{K}_{fs} & \mathbf{K}_{f} & \mathbf{Q} \\
+\mathbf{0} & \mathbf{Q}^{T} & \mathbf{S}
+\end{bmatrix}$$Blocco $\mathbf{K}_{s}$ (Struttura-Struttura): La normale matrice di rigidezza strutturale (proveniente dagli elementi strutturali come shell o solid).Blocchi $\mathbf{K}_{sf}$ e $\mathbf{K}_{fs}$ (Accoppiamento Interfaccia): Questi blocchi, non presenti nelle equazioni elementari del fluido puro, nascono dall'accoppiamento sulla superficie di contatto (interfaccia Fluido-Struttura). Essi trasferiscono la rigidezza meccanica della struttura ai DoF del fluido e viceversa.Blocco $\mathbf{K}_{f}$ (Fluido-Fluido): La matrice di rigidezza interna del fluido. Nel caso di fluido non viscoso, deriva solo dai termini $\mathbf{K}_{\text{shear}}$ assemblati, ed è tipicamente nulla ($\mathbf{K}_{f} \approx \mathbf{0}$).Blocchi $\mathbf{Q}$ e $\mathbf{Q}^{T}$ (Accoppiamento $u-p$): Assemblaggio delle matrici di accoppiamento Spostamento-Pressione $\mathbf{Q}$ calcolate per ogni elemento fluido.Blocco $\mathbf{S}$ (Pressione-Pressione): Assemblaggio della matrice di compressibilità $\mathbf{S}$. Nel caso di incomprimibilità perfetta, $\mathbf{S}$ è nulla ($\mathbf{S} = \mathbf{0}$).
+\subsection{Aggiunta dei Termini Dinamici (Massa e Smorzamento)}
+Per ottenere l'equazione di equilibrio dinamico (basata sul Principio di D'Alembert), si devono aggiungere i termini inerziali (Massa $\mathbf{M}$) e dissipativi (Smorzamento $\mathbf{C}$).Matrici di Massa e Smorzamento GlobaliSi assemblano le matrici di massa $\mathbf{M}_s$ (struttura) e $\mathbf{M}_f$ (fluido) e la matrice di smorzamento $\mathbf{C}$:$$\mathbf{M}_{\text{tot}} = \begin{bmatrix}
+\mathbf{M}_{s} & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{M}_{f} & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{M}_{p}
+\end{bmatrix}, \quad
+\mathbf{C}_{\text{tot}} = \begin{bmatrix}
+\mathbf{C}_{s} & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{C}_{f} & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{C}_{p}
+\end{bmatrix}$$Blocco $\mathbf{M}_{f}$ (Massa Fluido): Assemblaggio delle matrici di massa $\mathbf{M}_e$ del fluido (derivante dalla densità $\rho_f$). Questo blocco è cruciale in FSI.Blocchi $\mathbf{M}_p$ e $\mathbf{C}_p$: Le variabili di pressione $p$ non hanno inerzia né smorzamento proprio, quindi questi blocchi sono nulli ($\mathbf{M}_p=\mathbf{0}$, $\mathbf{C}_p=\mathbf{0}$).
+\subsection{L'Equazione di Equilibrio Finale}
+Combinando i termini inerziali, dissipativi e di rigidezza, si ottiene l'equazione del moto accoppiata globale del sistema FSI, che è una forma discreta dell'equazione differenziale di equilibrio:$$\mathbf{M}_{\text{tot}} \ddot{\mathbf{D}} + \mathbf{C}_{\text{tot}} \dot{\mathbf{D}} + \mathbf{K}_{\text{tot}} \mathbf{D} = \mathbf{F}_{\text{globale}}$$In forma espansa e con i blocchi nulli semplificati, l'equazione di equilibrio è:$$\begin{bmatrix}
+\mathbf{M}_{s} & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{M}_{f} & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{0}
+\end{bmatrix}
+\begin{Bmatrix}
+\ddot{\mathbf{u}}_s \\ \ddot{\mathbf{u}}_f \\ \ddot{p}
+\end{Bmatrix}
++
+\begin{bmatrix}
+\mathbf{C}_{s} & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{C}_{f} & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{0}
+\end{bmatrix}
+\begin{Bmatrix}
+\dot{\mathbf{u}}_s \\ \dot{\mathbf{u}}_f \\ \dot{p}
+\end{Bmatrix}
++
+\begin{bmatrix}
+\mathbf{K}_{s} & \mathbf{K}_{sf} & \mathbf{0} \\
+\mathbf{K}_{fs} & \mathbf{0} & \mathbf{Q} \\
+\mathbf{0} & \mathbf{Q}^{T} & \mathbf{0}
+\end{bmatrix}
+\begin{Bmatrix}
+\mathbf{u}_s \\ \mathbf{u}_f \\ p
+\end{Bmatrix}
+=
+\begin{Bmatrix}
+\mathbf{F}_{s} \\ \mathbf{F}_{f} \\ \mathbf{0}
+\end{Bmatrix}$$Punto Chiave:L'ultima riga del sistema (corrispondente ai DoF di pressione) è:$$\mathbf{0} \cdot \ddot{\mathbf{u}} + \mathbf{0} \cdot \dot{\mathbf{u}} + \mathbf{Q}^T \mathbf{u}_f + \mathbf{0} \cdot p = \mathbf{0}$$Questa riga impone che $\mathbf{Q}^T \mathbf{u}_f = \mathbf{0}$, che è la forma discretizzata del vincolo di incomprimibilità $\nabla \cdot \mathbf{u}_f = 0$ a livello globale. L'equilibrio finale è quindi un sistema accoppiato che risolve simultaneamente il moto della struttura, il moto del fluido e la pressione necessaria a garantire che il fluido sia incomprimibile.
+
+
+\subsection{L'Equazione del Moto Accoppiata (Discretizzata)}
+
+Il sistema accoppiato che governa la dinamica del fluido e della struttura può essere scritto in forma matriciale (trascurando, per semplicità, la matrice di smorzamento $\mathbf{C}$):
+%
+$$
+\begin{bmatrix}
+\mathbf{M}_s & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{M}_f & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{0}
+\end{bmatrix}
+\begin{Bmatrix}
+\ddot{\mathbf{u}}_s \\ \ddot{\mathbf{u}}_f \\ \ddot{p}
+\end{Bmatrix}
++
+\begin{bmatrix}
+\mathbf{K}_s & \mathbf{K}_{sf} & \mathbf{0} \\
+\mathbf{K}_{fs} & \mathbf{K}_f & \mathbf{Q} \\
+\mathbf{0} & \mathbf{Q}^T & \mathbf{S}
+\end{bmatrix}
+\begin{Bmatrix}
+\mathbf{u}_s \\ \mathbf{u}_f \\ p
+\end{Bmatrix}
+=
+\begin{Bmatrix}
+\mathbf{F}_s \\ \mathbf{F}_f \\ \mathbf{0}
+\end{Bmatrix}
+$$
+%
+Dove:
+\begin{itemize}
+    \item $\mathbf{M}_s, \mathbf{M}_f$: Matrici di massa di struttura e fluido.
+    \item $\mathbf{K}_s$: Matrice di rigidezza strutturale.
+    \item $\mathbf{K}_f$: Matrice di rigidezza del fluido (basata sulla viscosità, spesso trascurata in approcci acustici, dove il fluido non ha resistenza al taglio $\mathbf{K}_f \approx \mathbf{0}$).
+    \item $\mathbf{Q}$: \textbf{Matrice di accoppiamento} (divergenza di $\mathbf{u}_f$ / gradiente di $p$), il termine cruciale.
+    \item $\mathbf{S}$: Matrice di compressibilità (spesso $\mathbf{S}=\mathbf{0}$ per incomprimibilità perfetta).
+\end{itemize}
+
+\section{Riferimenti Accademici Chiave}
+
+La robustezza di una formulazione mista dipende dalla scelta delle funzioni di forma per $\mathbf{u}$ e $p$.
+
+\subsection{Stabilità e Condizione Inf-Sup}
+
+Il problema di implementare elementi misti stabili è risolto dalla \textbf{Condizione di Brezzi-Douglas-Fortin} (o Inf-Sup condition). Questa condizione impone che la funzione di interpolazione della pressione deve essere "più debole" di quella dello spostamento per evitare il fenomeno di \textbf{blocco volumetrico} (volumetric locking) o le oscillazioni spurie della pressione.
+
+\begin{itemize}
+    \item \textbf{Testi Fondamentali:}
+    \begin{enumerate}
+        \item \textbf{Bathe, K. J.} (\emph{Finite Element Procedures}): Capitoli sulla formulazione $u/p$ per la meccanica dei solidi quasi-incomprimibili (gomma) e fluidi (Stokes). Fornisce una derivazione pratica e le sfide di stabilità.
+        \item \textbf{Brezzi, F. \& Fortin, M.} (\emph{Mixed and Hybrid Finite Element Methods}): Riferimento teorico essenziale sulla stabilità degli elementi misti.
+    \end{enumerate}
+    \item \textbf{Applicazioni FSI:}
+    \begin{enumerate}
+        \item \textbf{Zienkiewicz, O. C. \& Bettess, P.}: Lavori pionieristici sull'Interazione Fluido-Struttura (FSI) usando elementi finiti, in particolare il trattamento del fluido come un mezzo acustico/quasi-incomprimibile in coordinate Lagrangiane.
+        \item \textbf{Approccio "Added Mass" (Massa Aggiunta):} Questa formulazione è spesso ricondotta alla stima dell'effetto inerziale del fluido sulla struttura in analisi dinamiche (vibrazioni o sloshing in serbatoi).
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Elementi Stabili per Incomprimibilità}
+
+Per gli elementi triangolari 2D, la coppia di funzioni di interpolazione stabile più semplice è l'\textbf{Elemento $P_1/P_0$}:
+\begin{itemize}
+    \item Spostamento ($\mathbf{u}$): \textbf{Lineare} su 3 nodi ($P_1$).
+    \item Pressione ($p$): \textbf{Costante} sull'elemento ($P_0$).
+\end{itemize}
+L'Elemento $P_1/P1$ (lineare per $\mathbf{u}$ e $p$) \textbf{fallisce} la condizione Inf-Sup e deve essere scartato o stabilizzato.
+
+\section{Implementazione Concettuale in Python (Elemento $P_1/P_0$)}
+
+Il codice seguente illustra la costruzione delle matrici elementari $\mathbf{Q}$ e $\mathbf{M}_f$ per l'elemento triangolare $P_1/P_0$ (6 gradi di libertà per lo spostamento, 1 per la pressione) in 2D. Assumiamo \textbf{incomprimibilità perfetta} ($\mathbf{S}=\mathbf{0}$) e \textbf{fluido ideale} ($\mathbf{K}_{\text{shear}}=\mathbf{0}$).
+
+\begin{lstlisting}[language=Python, caption={Funzione per il calcolo delle matrici elementari per un elemento triangolare P1/P0 (u-p) 2D}]
+import numpy as np
+
+def calculate_element_matrices_P1P0(coords, rho_fluid):
+    """
+    Calcola le matrici elementari per un elemento triangolare P1/P0 (u-p) 2D.
+    - u: Spostamento (lineare, 3 nodi)
+    - p: Pressione (costante, 1 valore per elemento)
+
+    Args:
+        coords (np.array): Coordinate dei 3 nodi, shape (3, 2). Es: [[x1, y1], [x2, y2], [x3, y3]]
+        rho_fluid (float): Densita' del fluido (per la matrice di massa).
+
+    Returns:
+        K_e (np.array): Matrice di rigidezza 'shear' (6x6) - Quasi zero per fluido ideale.
+        Q_e (np.array): Matrice di accoppiamento (6x1).
+        M_e (np.array): Matrice di massa condensata (6x6), importante per la dinamica FSI.
+    """
+    
+    # Estrazione coordinate
+    x1, y1 = coords[0, :]
+    x2, y2 = coords[1, :]
+    x3, y3 = coords[2, :]
+
+    # Calcolo Area (Area = 0.5 * det(J))
+    # Matrice J (trasformazione da spazio naturale a fisico)
+    J = np.array([
+        [x2 - x1, y2 - y1],
+        [x3 - x1, y3 - y1]
+    ])
+    Area = 0.5 * np.abs(np.linalg.det(J))
+
+    if Area < 1e-12:
+        raise ValueError("L'area dell'elemento e' troppo piccola, mesh degenerata.")
+    
+    # Calcolo dei gradienti (dNi/dx, dNi/dy)
+    # B = [dNu/dx, dNu/dy] (matrice dei gradienti dello spostamento)
+    
+    a = [x2 * y3 - x3 * y2, x3 * y1 - x1 * y3, x1 * y2 - x2 * y1]
+    b = [y2 - y3, y3 - y1, y1 - y2]
+    c = [x3 - x2, x1 - x3, x2 - x1]
+    
+    # Matrice di accoppiamento Q (6x1)
+    # Q_i = (dNi/dx) + (dNi/dy)  * Area
+    # La pressione e' costante (N_p = 1) e il volume strain e' epsilon_v = d(ux)/dx + d(vy)/dy
+    # Q_e = INTEGRALE( B_i^T * m * N_p dOmega )  dove m = [1, 1, 0]^T e N_p = 1
+    
+    Q_e = np.zeros((6, 1))
+    
+    # I gradi di liberta' (u1, v1, u2, v2, u3, v3)
+    # Per u1 (indice 0) e v1 (indice 1) del nodo 1
+    Q_e[0] = b[0] * Area / (2 * Area) # Gradiente x
+    Q_e[1] = c[0] * Area / (2 * Area) # Gradiente y
+    
+    # Per u2 (indice 2) e v2 (indice 3) del nodo 2
+    Q_e[2] = b[1] * Area / (2 * Area)
+    Q_e[3] = c[1] * Area / (2 * Area)
+    
+    # Per u3 (indice 4) e v3 (indice 5) del nodo 3
+    Q_e[4] = b[2] * Area / (2 * Area)
+    Q_e[5] = c[2] * Area / (2 * Area)
+    
+    # Simplificazione (Area si annulla, rimane solo b_i e c_i)
+    # Q_e[0] = b[0]/2; Q_e[1] = c[0]/2; ecc. 
+    # Usiamo la forma piu' esplicita per chiarezza:
+    Q_e[0] = b[0] * 0.5 
+    Q_e[1] = c[0] * 0.5
+    Q_e[2] = b[1] * 0.5
+    Q_e[3] = c[1] * 0.5
+    Q_e[4] = b[2] * 0.5
+    Q_e[5] = c[2] * 0.5
+    
+    Q_e *= 1.0 # In 2D, lo spessore dell'elemento (t) e' spesso incluso qui, assumiamo t=1
+    
+    # La Matrice K_shear (Rigidezza Deviatorica)
+    # Per il fluido ideale, questa e' zero.
+    K_e = np.zeros((6, 6))
+    
+    # La Matrice S (Rigidezza di Compressibilita' della Pressione)
+    # S e' una matrice 1x1. Per incomprimibilita' pura, S_e = 0.
+    # Per modellare un fluido leggermente comprimibile (o per stabilita') si usa 1/K_bulk.
+    # S_e = - (Area / K_bulk) dove K_bulk e' il modulo di elasticita' volumetrica.
+    # In FSI dinamica, si usa una formulazione a pressione dove K_bulk = rho * c^2 (velocita' del suono)
+    S_e = np.array([[0.0]]) # Incomprimibilita' perfetta
+    
+    # Matrice di Massa M_e (Cruciale per FSI Dinamica)
+    # M_e (6x6) = INTEGRALE( rho * N^T * N dOmega )
+    # Per un'approssimazione 'lumped' (concentrata) per un P1 (3 nodi), la massa e' divisa tra i nodi:
+    m_nodal = rho_fluid * Area / 3.0
+    M_e = np.diag([m_nodal, m_nodal, m_nodal, m_nodal, m_nodal, m_nodal])
+    
+    return K_e, Q_e, S_e, M_e, Area
+
+# Esempio di Utilizzo
+# Un triangolo con vertici (0,0), (1,0), (0,1)
+coords_ex = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+rho_acqua = 1000.0 # kg/m^3
+
+try:
+    K_e, Q_e, S_e, M_e, Area = calculate_element_matrices_P1P0(coords_ex, rho_acqua)
+
+    print(f"Area Elemento: {Area:.3f}")
+    
+    print("\nMatrice di Accoppiamento Q_e (Spostamento-Pressione) - 6x1:")
+    print(Q_e)
+    # Nota: i valori non nulli sono Q[0]=b[0]/2, Q[1]=c[0]/2, ecc.
+    # Ad esempio, per il nodo 1, Q[0] = (0-1)/2 = -0.5, Q[1] = (0-0)/2 = 0.0
+    
+    print("\nMatrice di Massa M_e (Lumped) - 6x6:")
+    print(M_e)
+
+    # La Matrice Globale Accoppiata sarebbe:
+    # K_global = | M_struct+K_struct  | 0          |  0  |
+    #            | 0                  | M_fluid    |  Q  |
+    #            | 0                  | Q^T        |  S  |
+    # La soluzione si cerca su (u_struttura, u_fluido, p)
+
+except ValueError as e:
+    print(f"Errore: {e}")
+\end{lstlisting}
+
+
+
+
+\begin{thebibliography}{99}
+
+% Riferimenti Fondamentali sulla Teoria Mista u-p e Incomprimibilità
+
+\bibitem{Bathe}
+\textsc{Bathe, K. J.} (2014).
+\emph{Finite Element Procedures}.
+K. J. Bathe, Watertown, MA.
+(Riferimento essenziale per la formulazione mista $u/p$ applicata sia ai fluidi che ai solidi quasi-incomprimibili).
+
+\bibitem{BrezziFortin}
+\textsc{Brezzi, F.} and \textsc{Fortin, M.} (1991).
+\emph{Mixed and Hybrid Finite Element Methods}.
+Springer-Verlag, New York.
+(Il testo fondamentale sulla teoria degli elementi finiti misti e la condizione di stabilità $\text{Inf-Sup}$, cruciale per la formulazione $u-p$).
+
+% Riferimenti sull'Interazione Fluido-Struttura (FSI) e l'Approccio Acustico
+
+\bibitem{ZienkiewiczBettess}
+\textsc{Zienkiewicz, O. C.} and \textsc{Bettess, P.} (1978).
+Fluid-Structure Interaction: Theory and application.
+In \emph{Finite Elements in Fluids}, Vol. 3, Wiley, London.
+(Lavoro pionieristico che inquadra il problema FSI e l'uso di elementi finiti per la modellazione acustica/Lagrangiana del fluido confinato).
+
+\bibitem{ZienkiewiczBettess_Review}
+\textsc{Zienkiewicz, O. C.} and \textsc{Bettess, P.} (1982).
+Symmetric finite element formulation for fluid-structure interaction.
+\emph{International Journal for Numerical Methods in Engineering}, 19(11), pp. 1681--1689.
+(Articolo che approfondisce la formulazione simmetrica, concettualmente alla base degli elementi di tipo FLUID79).
+
+% Riferimento Metodologico/Applicativo (per contesto)
+
+\bibitem{Hughes}
+\textsc{Hughes, T. J. R.} (2000).
+\emph{The Finite Element Method: Linear Static and Dynamic Finite Element Analysis}.
+Dover Publications.
+(Copre i fondamenti della dinamica FSI e l'uso di formulazioni miste nei problemi di flusso).
+
+\end{thebibliography}
+
+\end{document}
