@@ -3,14 +3,17 @@
 \usepackage[a5paper]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[italian]{babel}
+\usepackage{tikz}
 
 
 \begin{document}
 
-\title{Truss optimizer}
+\title{\Huge \bfseries Truss optimizer}
 \author{Andrea Marchi}
 \maketitle
 
+
+\section{Ottimizzazione aree elementi}
 
 L'idea e` quella che iterativamente il FEM trova la sezione necessaria $A$ per ottenere la tensione obiettivo $\sigma_{ob}$.
 Risolto per la prima volta il sistema, l'elemento $i$ e` sottoposto alla tensione
@@ -21,9 +24,28 @@ $$ A_i(t_2) = \frac{|N_i(t_1)|}{\sigma_{ob}} \geq A_{\min} $$
 Per evitare che in aste completamente scariche si ha un'area nulla bisogna comunque avere un vincolo di area minima $A_{\min}$.
 Una volta settate queste nuove aree il sistema viene nuovamente risolto per trovare i nuovi sforzi nelle aste. Questo, in generale, porta a sforzi diversi e quindi aree diverse per le iterazioni successive.
 Le iterazioni sono portate avanti finche` il sistema non arriva a convergenza. Questo puo` misurarsi in termini di differenze della somma delle $\sigma$ al quadrato per tutti gli elementi e vedendo la differenza tra una iterazione e l'altra. Quindi il programma termina il calcolo quando
-$$ \sum_{i=1}^N \left[\sigma_i(t_j) - \sigma_{ob} \right]^2 \leq \mathrm{Tol} $$
+$$ \sum_{i=1}^N \left[|\sigma_i(t_j)| - \sigma_{ob} \right]^2 \leq \mathrm{Tol} $$
 
 Ovviamente i sistemi isostatici non hanno bisogno di iterazioni e le aree dopo la prima iterazione sono gia` quelle definitive.
+
+\textcolor{red}{Se c'e' un elemento scarico questa metodologia non converge...}
+Questo perche' $\sigma_i = N_i / A_i$, dato che $N_i$ e' pari a zero, allora si somma all'errore un termine $N_{zero} \; \sigma_{ob}^2$ ($N_{zero}$ e' il numero di elementi in cui $N=0$).
+Per ovviare a questo potrei definire l'errore in termini di differenza percentuale tra aree (piu' complesso da programmare)
+$$ \mathrm{errore}_j := \sum_{i=1}^N \frac{|A_i(t_{j+1}) - A_i(t_j)|}{A_i(t_{j+1})} $$
+dove $\mathrm{errore}_j$ e' l'errore all'istante $j$ e la somma e' fatta su tutti gli $N$ elementi.
+Ovviamente l'errore deve essere minore di una tolleranza, considerata in termini percentuali rispetto all'area.
+
+La velocita' di convergenza sembra essere lineare e dipende dal numero di iperstatiche (maggiore iperstaticita' e maggior tempo ci vuole per far convergere il risultato, ovvero la velocita' e' minore).
+
+
+\section{Ottimizzazione struttura}
+\subsection{Eliminazione elementi}
+
+In questa strategia partiamo da una struttura a molte iperstatiche e, ad ogni iterazione, eliminiamo un elemento, fino a raggiungere una struttura ottimizzata.
+
+\textcolor{red}{Per capire se ha eliminato tanti elementi da ottenere un sistema isostatico potrei vedere il numero di iterazioni necessarie per ottimizzare le aree. Se il numero e' pari a 1 allora ho raggiunto una struttura isostatica...}
+
+
 
 
 

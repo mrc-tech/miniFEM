@@ -16,10 +16,16 @@ from miniFEM import truss2D as fem
 # MODELLO --------------------------------------------------------------------
 
 units = "m, kN, kPa, s"
+# model_path = "test_model.json"
+model_path = "wall.json"
+# model_path = "../truss/Long.json"
+# model_path = "../truss/Howe.json"
+# model_path = "../truss/Pratt.json"
+# model_path = "../truss/Fink.json"
+
 
 # importa il modello da un file JSON:
-# with open("test_model.json",'r') as f: data = json.load(f)
-with open("Long.json",'r') as f: data = json.load(f)
+with open(model_path,'r') as f: data = json.load(f)
 nodes = data['nodes']
 elements = data['elements']
 constraints = data['constraints']
@@ -57,22 +63,24 @@ def solve_FEM(nodes,elements,constraints,forces):
 # --------------------------------------------------------------------
 
 
-sigma_ob = 1  # tensione obiettivo (gli elementi dovrebbero avere tutti questa tensione)
+sigma_ob = 1 # tensione obiettivo (gli elementi dovrebbero avere tutti questa tensione)
 # FARE UNA TENSIONE DIVERSA IN TRAZIONE E IN COMPRESSIONE!!!!
 A_min = 0.001 # area minima delle aste
-Tol = 0.000000001 # tolleranza per la convergenza
+Tol = 1e-6 # tolleranza per la convergenza
 errore = 100*Tol # parametro per uscire dalle iterazioni
 
 count = 0
 solve_FEM(nodes,elements,constraints,forces) # risolve per la prima volta
-while errore >= Tol: # itera finche' non ha ottimizzato
+while errore >= Tol and count < 1000: # itera finche' non ha ottimizzato
     for i,_ in enumerate(elements):
         elements[i]['A'] = max([np.abs(elements[i]['N']) / sigma_ob, A_min])
     solve_FEM(nodes,elements,constraints,forces) # risolve con le nuove aree
     count += 1
     errore = 0
-    for e in elements:
-        errore += pow(np.abs(e['N']/e['A']) - sigma_ob, 2)
+    for i,e in enumerate(elements):
+        # errore += pow(np.abs(e['N']/e['A']) - sigma_ob, 2)
+        new_A = max([np.abs(elements[i]['N']) / sigma_ob, A_min]) # calcola la nuova A per l'errore
+        errore += (np.abs(new_A - elements[i]['A'])) / new_A
     print(f"Iterazione {count}: errore = {errore}")
         
 
@@ -84,8 +92,8 @@ with open('truss2D_model_optimized.json', 'w', encoding='utf-8') as f: json.dump
 # PLOT --------------------------------------------------------------------
 
 
-maxA = max(abs(e['A']) for e in elements) # area massima
-minA = min(abs(e['A']) for e in elements) # area minima
+maxA = max(np.abs(e['A']) for e in elements) # area massima
+minA = min(np.abs(e['A']) for e in elements) # area minima
 
 fig, ax = plt.subplots()
 
@@ -100,13 +108,12 @@ for e in elements:
     xi, yi = nodes[i]['x'], nodes[i]['y']
     xj, yj = nodes[j]['x'], nodes[j]['y']
     
-    lw = 1 + 6 * abs(A)/maxA
+    lw = 0.1 + (6-0.1) * ((np.abs(A)-minA)/(maxA-minA))
 
     ax.plot([xi, xj], [yi, yj], color='black', linewidth=lw)
 
     xm, ym = (xi+xj)/2, (yi+yj)/2
     # ax.text(xm, ym, f"{N:.1f}", color=color, fontsize=9)
-
     ax.text(
         xm, ym, f"{A:.1f}",
         fontsize=10,
