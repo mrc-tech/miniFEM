@@ -1,0 +1,214 @@
+\documentclass[a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{tikz}
+
+
+\begin{document}
+
+\textcolor{gray}{ho una domanda sulla scienza delle costruzioni.
+In particolare riguardo elementi finiti a "truss" e continui 2D.
+vorrei vedere se posso definire una corrispondenza tra un elemento finito quad2D e 6 elementi truss.
+In particolare quattro nodi\\
+nodo 1: (0,0)\\
+nodo 2: (B,0)\\
+nodo 3: (B,H)\\
+nodo 4: (0,H)\\
+\\
+due elementi di rigidezza k1 (EA=k1) che vanno dal nodo 1 al 4 e dal 2 al 3
+due elementi di rigidezza k2 dal nodo 1 al 2 e dal 4 al 3
+due elementi di rigidezza k3 dal nodo 1 al 3 e dal 2 al 4
+\\
+Non so se puo' aiutare, ma le tre condizioni per cui definire le tre costanti possono essere la deformazione assiale data da una forza di compressione, lo spanciamento dato da questa forza di compressione e una forza di taglio con equivalente deformazione gamma.
+\\
+Insomma, definire le costanti ki partendo da E,ni e dalle dimensioni B e H... }
+
+\bigskip
+
+
+
+È un'ottima domanda di Scienza delle Costruzioni. Quello che stai cercando di formulare è un modello a graticcio equivalente (noto storicamente come modello reticolare di Hrennikoff). Questo approccio è stato uno dei primissimi metodi numerici utilizzati per approssimare continui 2D prima della formulazione rigorosa degli elementi finiti isoparametrici.
+La risposta breve è sì, è possibile definire questa corrispondenza, ma c'è un limite teorico fondamentale legato al coefficiente di Poisson ($\nu$) che devi conoscere.
+Di seguito ti mostro come ricavare le tue costanti $k_1, k_2, k_3$ (dove $k_i = E_i A_i$) partendo da $E$, $\nu$, dalle dimensioni $B, H$ e dallo spessore $t$ dell'elemento 2D.
+
+
+\section{Il principio di equivalenza (Le tue 3 condizioni)}
+
+Per definire le costanti, il metodo più rigoroso consiste nell'uguagliare l'energia di deformazione del continuo 2D (in stato di sforzo piano) con l'energia di deformazione del sistema delle 6 aste sottoposto allo stesso campo di deformazioni uniforme.
+Le tre condizioni che hai intuitivamente individuato corrispondono ai termini della matrice costitutiva del materiale:
+\begin{itemize}
+\item Deformazione assiale: Legata al modulo di Young ($E$).
+\item Spanciamento: Legato al coefficiente di Poisson ($\nu$).
+\item Deformazione a taglio $\gamma$: Legata al modulo di Taglio ($G = \frac{E}{2(1+\nu)}$).
+\end{itemize}
+Chiamiamo la lunghezza delle diagonali $D = \sqrt{B^2 + H^2}$.
+
+
+\section{Il "paradosso" del modello a 6 aste}
+
+Se calcoliamo il contributo di rigidezza delle aste, notiamo subito un problema: le aste orizzontali e verticali non offrono alcuna resistenza al taglio (essendo incernierate e ortogonali). Tutta la rigidezza a taglio del sistema è affidata ai due elementi diagonali $k_3$. Allo stesso tempo, sono sempre i diagonali $k_3$ a governare l'accoppiamento tra le direzioni $x$ e $y$ (lo spanciamento).
+Se imponiamo la condizione di equivalenza al taglio, otteniamo:
+$$k_3 = \frac{E \cdot t}{2(1+\nu)} \frac{D^3}{B \cdot H}$$
+Se imponiamo la condizione di equivalenza allo spanciamento (effetto Poisson), otteniamo:
+$$k_3 = \frac{E \cdot \nu \cdot t}{1-\nu^2} \frac{D^3}{B \cdot H}$$
+Affinché il tuo modello di 6 aste sia perfettamente equivalente al continuo 2D per tutte e tre le tue condizioni, queste due equazioni devono essere identiche. Risolvendo l'uguaglianza si ottiene:
+$$\frac{1}{2(1+\nu)} = \frac{\nu}{1-\nu^2} \rightarrow 1-\nu = 2\nu \rightarrow \nu = \frac{1}{3}$$
+Conclusione teorica: Un elemento continuo rettangolare può essere modellato in modo esatto da 6 elementi truss solo e soltanto se il materiale ha un coefficiente di Poisson $\nu = 1/3$ (che, fortunatamente, è molto vicino a quello di molti metalli, come l'alluminio o l'acciaio).
+
+
+\section{Le formule per le rigidezze $k_i$}
+
+A seconda del materiale che stai modellando, hai due strade.
+
+\subsection{Caso A: Soluzione Esatta (per materiali con $\nu \approx 1/3$)}
+
+Se assumiamo $\nu = 1/3$, il modello è perfetto. Le rigidezze assiali delle aste (forza per unità di deformazione, o $EA$) risultano essere:
+Aste verticali (nodi 1-4, 2-3):
+$$k_1 = \frac{3 \cdot E \cdot t}{16 \cdot B} (3B^2 - H^2)$$
+Aste orizzontali (nodi 1-2, 4-3):
+$$k_2 = \frac{3 \cdot E \cdot t}{16 \cdot H} (3H^2 - B^2)$$
+Aste diagonali (nodi 1-3, 2-4):
+$$k_3 = \frac{3 \cdot E \cdot t}{16 \cdot B \cdot H} D^3$$
+\textit{(Nota dimensionale: se le dimensioni geometriche impongono che ad esempio $3H^2 - B^2 < 0$, significa che l'asta orizzontale dovrebbe avere una rigidezza negativa. Questo limita l'uso di questo reticolo a rettangoli non troppo "allungati", idealmente con un rapporto d'aspetto $B/H$ vicino a 1)}.
+
+
+\subsection{Caso B: Soluzione Approssimata (per $\nu \neq 1/3$)}
+
+Se il tuo materiale ha un $\nu$ diverso da 1/3 (es. calcestruzzo $\nu=0.2$ o gomma $\nu=0.5$), non puoi soddisfare tutte e tre le condizioni contemporaneamente. La prassi nella modellazione a macro-elementi è privilegiare l'esattezza al taglio e alla deformazione assiale, accettando un piccolo errore sull'effettivo spanciamento (che il modello tratterà intrinsecamente come se fosse $1/3$).
+In questo caso, le formule diventano:
+Aste diagonali (per calibrare il Taglio $G$):
+$$k_3 = \frac{E \cdot t}{2(1+\nu)} \frac{D^3}{B \cdot H}$$
+Aste verticali (per calibrare la compressione in Y):
+$$k_1 = \frac{E \cdot t}{1+\nu} \left( \frac{B}{1-\nu} - \frac{H^2}{2B} \right)$$
+Aste orizzontali (per calibrare la compressione in X):
+$$k_2 = \frac{E \cdot t}{1+\nu} \left( \frac{H}{1-\nu} - \frac{B^2}{2H} \right)$$
+Vuoi che ti scriva un breve script in Python o MATLAB che assembla la matrice di rigidezza di queste 6 aste per confrontarla numericamente con la matrice di un vero elemento finito Quad4 continuo?
+
+
+\dotfill
+
+
+\subsection{Passo 1: L'Energia del Continuo 2D}
+Consideriamo il nostro pannello continuo di base $B$, altezza $H$ e spessore $t$.
+Se applichiamo uno stato di taglio puro, il materiale subisce una distorsione angolare $\gamma$.
+L'energia di deformazione elastica ($U_c$) immagazzinata nel volume del continuo è data dall'integrale della densità di energia:
+$$U_c = \frac{1}{2} \int_V \tau \cdot \gamma \, dV$$
+Sapendo che la tensione tangenziale è $\tau = G \cdot \gamma$ (dove $G$ è il modulo di taglio) e che il volume è $V = B \cdot H \cdot t$, l'equazione diventa:
+$$U_c = \frac{1}{2} (G \cdot \gamma) \cdot \gamma \cdot (B \cdot H \cdot t) = \frac{1}{2} G \, \gamma^2 B \, H \, t$$
+\subsection{Passo 2: La cinematica del reticolo (le aste si allungano)}
+Ora prendiamo i nostri 4 nodi e imponiamo loro la stessa esatta deformazione $\gamma$. Il rettangolo si "storce" diventando un parallelogramma.
+Assegniamo gli spostamenti orizzontali in funzione dell'altezza $y$ ($u_x = \gamma \cdot y$):
+\begin{itemize}
+\item Nodo 1 (0,0): resta fermo.
+\item Nodo 2 (B,0): resta fermo.
+\item Nodo 3 (B,H): si sposta a destra di $\gamma H$.
+\item Nodo 4 (0,H): si sposta a destra di $\gamma H$.
+\end{itemize}
+Cosa succede alle 6 aste?
+Aste orizzontali e verticali: nell'ipotesi di piccoli spostamenti, queste aste ruotano rigidamente o traslano, ma la loro variazione di lunghezza è un infinitesimo di ordine superiore (trascurabile). Non accumulano energia.
+Aste diagonali ($k_3$): sono le uniche a deformarsi assialmente. La lunghezza iniziale di entrambe è la diagonale $D = \sqrt{B^2+H^2}$.
+Calcoliamo l'allungamento ($\Delta L$) usando la cinematica. L'allungamento di un'asta è pari alla proiezione dello spostamento relativo dei suoi nodi lungo la direzione dell'asta.
+Diagonale 1-3: L'asta è tesa. Lo spostamento del nodo 3 rispetto all'1 è orizzontale verso destra ($\gamma H$). Il coseno dell'angolo che la diagonale forma con la base è $\cos(\theta) = \frac{B}{D}$.
+$$\Delta L_{13} = \gamma H \cdot \frac{B}{D}$$
+Diagonale 2-4: L'asta è compressa. Lo spostamento del nodo 4 rispetto al 2 è orizzontale verso destra ($\gamma H$). Il coseno è geometricamente lo stesso.
+$$\Delta L_{24} = -\gamma H \cdot \frac{B}{D}$$
+\subsection{Passo 3: L'Energia del reticolo a 6 aste}
+La rigidezza assiale di un'asta (Forza/Spostamento) si definisce come $K_{asta} = \frac{EA}{L}$. Poiché hai definito la costante $k_3 = E_3 A_3$, la rigidezza delle diagonali sarà $\frac{k_3}{D}$.
+L'energia di deformazione elastica ($U_t$) immagazzinata da una molla/asta è $\frac{1}{2} K (\Delta L)^2$. Sommiamo l'energia delle due diagonali:
+$$U_t = U_{13} + U_{24} = \frac{1}{2} \left( \frac{k_3}{D} \right) (\Delta L_{13})^2 + \frac{1}{2} \left( \frac{k_3}{D} \right) (\Delta L_{24})^2$$
+Sostituendo i $\Delta L$ trovati al Passo 2 (e notando che il segno meno di $\Delta L_{24}$ scompare al quadrato):
+$$U_t = 2 \cdot \left[ \frac{1}{2} \left( \frac{k_3}{D} \right) \left( \frac{\gamma H B}{D} \right)^2 \right]$$
+$$U_t = \frac{k_3}{D} \cdot \frac{\gamma^2 H^2 B^2}{D^2} = k_3 \, \gamma^2 \frac{B^2 H^2}{D^3}$$
+\subsection{Passo 4: Uguagliare le energie (La risoluzione)}
+Per far sì che il reticolo si comporti esattamente come il continuo a taglio, le due energie devono essere uguali: $U_c = U_t$.
+$$\frac{1}{2} G \, \gamma^2 B \, H \, t = k_3 \, \gamma^2 \frac{B^2 H^2}{D^3}$$
+Semplifichiamo $\gamma^2$ da ambo i lati (il risultato è indipendente dall'entità della deformazione) e isoliamo la nostra incognita $k_3$:
+$$k_3 = \frac{1}{2} G \, B \, H \, t \cdot \frac{D^3}{B^2 H^2}$$
+$$k_3 = \frac{G \cdot t \cdot D^3}{2 \cdot B \cdot H}$$
+Infine, ricordiamo la relazione in campo elastico lineare isotropo tra il Modulo di Taglio $G$ e il Modulo di Young $E$: $G = \frac{E}{2(1+\nu)}$. Sostituendolo nell'equazione:
+$$k_3 = \frac{\frac{E}{2(1+\nu)} \cdot t \cdot D^3}{2 \cdot B \cdot H}$$
+Otteniamo così la formula finale e corretta per la rigidezza (il prodotto $EA$) delle diagonali:
+$$k_3 = \frac{E \cdot t}{4(1+\nu)} \frac{D^3}{B \cdot H}$$
+
+\dotfill
+
+Per trovare $k_1$ e $k_2$ applichiamo di nuovo il Principio di Equivalenza dell'Energia di Deformazione, ma questa volta sottoponiamo l'elemento a uno stato di trazione biassiale (o compressione, è lo stesso).
+Imponiamo contemporaneamente una deformazione assiale $\varepsilon_x$ in orizzontale e $\varepsilon_y$ in verticale. Questo stato tensionale attiverà tutte le aste del nostro reticolo.
+\subsection{Passo 1: L'Energia del Continuo 2D (Stato piano di tensione)}
+Per il continuo elastico isotropo, le tensioni in stato piano in funzione delle deformazioni sono:
+$$\sigma_x = \frac{E}{1-\nu^2} (\varepsilon_x + \nu \varepsilon_y)$$
+$$\sigma_y = \frac{E}{1-\nu^2} (\varepsilon_y + \nu \varepsilon_x)$$
+L'energia di deformazione elastica ($U_c$) nel volume $V = B \cdot H \cdot t$ è data da:
+$$U_c = \frac{1}{2} \int_V (\sigma_x \varepsilon_x + \sigma_y \varepsilon_y) \, dV$$
+Sostituendo le tensioni e moltiplicando per il volume, otteniamo l'energia totale del continuo:
+$$U_c = \frac{E \cdot t \cdot B \cdot H}{2(1-\nu^2)} \left( \varepsilon_x^2 + \varepsilon_y^2 + 2\nu \varepsilon_x \varepsilon_y \right)$$
+(Nota bene: il termine $2\nu \varepsilon_x \varepsilon_y$ rappresenta proprio l'effetto Poisson, l'accoppiamento tra le due direzioni).
+\subsection{Passo 2: La cinematica del reticolo (allungamento delle 6 aste)}
+Ora deformiamo il nostro reticolo in modo che subisca esattamente le stesse deformazioni $\varepsilon_x$ ed $\varepsilon_y$.
+I nodi si spostano di:
+\begin{itemize}
+\item Orizzontale: $\Delta X = B \cdot \varepsilon_x$
+\item Verticale: $\Delta Y = H \cdot \varepsilon_y$
+\end{itemize}
+Calcoliamo l'allungamento ($\Delta L$) di tutti e tre i gruppi di aste:
+\begin{enumerate}
+\item Aste orizzontali ($k_2$, lunghezza $B$, quantità 2):
+Si allungano semplicemente di $\Delta L_h = B \cdot \varepsilon_x$.
+\item Aste verticali ($k_1$, lunghezza $H$, quantità 2):
+Si allungano semplicemente di $\Delta L_v = H \cdot \varepsilon_y$.
+\item Aste diagonali ($k_3$, lunghezza $D$, quantità 2):
+Qui dobbiamo proiettare gli spostamenti $\Delta X$ e $\Delta Y$ lungo la direzione diagonale. La cinematica ci dice che l'allungamento di entrambe le diagonali è identico e vale:
+$$\Delta L_d = \frac{B^2 \varepsilon_x + H^2 \varepsilon_y}{D}$$
+\end{enumerate}
+\subsection{Passo 3: L'Energia del reticolo a 6 aste}
+Sommiamo l'energia di deformazione elastica ($\frac{1}{2} K \Delta L^2$) per tutte e 6 le aste, ricordando che la rigidezza di ciascun elemento è $\frac{k_i}{L_i}$. Moltiplichiamo per 2 ogni termine perché le aste lavorano a coppie:
+\begin{itemize}
+\item Energia orizzontali: $U_h = 2 \left[ \frac{1}{2} \left( \frac{k_2}{B} \right) (B \varepsilon_x)^2 \right] = k_2 \, B \, \varepsilon_x^2$
+\item Energia verticali: $U_v = 2 \left[ \frac{1}{2} \left( \frac{k_1}{H} \right) (H \varepsilon_y)^2 \right] = k_1 \, H \, \varepsilon_y^2$
+\item Energia diagonali: $U_d = 2 \left[ \frac{1}{2} \left( \frac{k_3}{D} \right) \left( \frac{B^2 \varepsilon_x + H^2 \varepsilon_y}{D} \right)^2 \right] = \frac{k_3}{D^3} \left( B^4 \varepsilon_x^2 + H^4 \varepsilon_y^2 + 2 B^2 H^2 \varepsilon_x \varepsilon_y \right)$
+\end{itemize}
+L'energia totale del reticolo ($U_t = U_h + U_v + U_d$) raggruppata per termini di deformazione diventa:
+$$U_t = \varepsilon_x^2 \left( k_2 B + \frac{k_3 B^4}{D^3} \right) + \varepsilon_y^2 \left( k_1 H + \frac{k_3 H^4}{D^3} \right) + \varepsilon_x \varepsilon_y \left( \frac{2 k_3 B^2 H^2}{D^3} \right)$$
+\subsection{Passo 4: Uguagliare le energie ($U_c = U_t$)}
+Affinché il reticolo sia equivalente al continuo, i coefficienti davanti a $\varepsilon_x^2$, $\varepsilon_y^2$ e $\varepsilon_x \varepsilon_y$ nell'equazione di $U_c$ (Passo 1) devono essere identici a quelli in $U_t$ (Passo 3).
+Da questo nascono tre equazioni.
+Equazione 1 (Termine incrociato $\varepsilon_x \varepsilon_y$):
+$$\frac{2 k_3 B^2 H^2}{D^3} = \frac{E \cdot t \cdot B \cdot H \cdot \nu}{1-\nu^2} \rightarrow k_3 = \frac{E \cdot t \cdot \nu}{2(1-\nu^2)} \frac{D^3}{B \cdot H}$$
+(Ecco il "paradosso"! Se uguagli questo $k_3$ ricavato dal modulo di Poisson con il $k_3$ ricavato dal taglio nel messaggio precedente, ottieni matematicamente $\nu = 1/3$. Per poter ricavare $k_1$ e $k_2$, accettiamo per il momento questo $k_3$).
+Equazione 2 (Termine orizzontale $\varepsilon_x^2$):
+
+$$k_2 B + \frac{k_3 B^4}{D^3} = \frac{E \cdot t \cdot B \cdot H}{2(1-\nu^2)}$$
+Isoliamo $k_2$ e sostituiamo l'espressione di $k_3$ appena trovata:
+
+$$k_2 = \frac{E \cdot t \cdot H}{2(1-\nu^2)} - k_3 \frac{B^3}{D^3} = \frac{E \cdot t \cdot H}{2(1-\nu^2)} - \left[ \frac{E \cdot t \cdot \nu \cdot D^3}{2(1-\nu^2) B \cdot H} \right] \frac{B^3}{D^3}$$
+Semplificando, troviamo la formula esatta per le aste orizzontali:
+
+$$k_2 = \frac{E \cdot t}{2(1-\nu^2)} \left( H - \frac{\nu \cdot B^2}{H} \right)$$
+Equazione 3 (Termine verticale $\varepsilon_y^2$):
+
+$$k_1 H + \frac{k_3 H^4}{D^3} = \frac{E \cdot t \cdot B \cdot H}{2(1-\nu^2)}$$
+Isolando $k_1$ per simmetria logica rispetto a $k_2$, otteniamo la formula per le aste verticali:
+
+$$k_1 = \frac{E \cdot t}{2(1-\nu^2)} \left( B - \frac{\nu \cdot H^2}{B} \right)$$
+Riepilogo (Se $\nu = 1/3$)
+Come puoi vedere dalla struttura delle formule, $k_1$ e $k_2$ dipendono dal modulo di Poisson $\nu$ in modo non lineare.
+Se proviamo a sostituire nel sistema il "valore magico" $\nu = 1/3$ che rende il modello esatto sia a taglio che a deformazione assiale, i termini $\frac{1}{2(1-(1/3)^2)}$ diventano $\frac{9}{16}$.
+Le equazioni si semplificano restituendo le eleganti formule storiche del metodo di Hrennikoff:
+$$k_1 = \frac{3 \cdot E \cdot t}{16 \cdot B} (3B^2 - H^2)$$
+$$k_2 = \frac{3 \cdot E \cdot t}{16 \cdot H} (3H^2 - B^2)$$
+\subsubsection{Riepilogo (Se $\nu = 1/3$)}
+Come puoi vedere dalla struttura delle formule, $k_1$ e $k_2$ dipendono dal modulo di Poisson $\nu$ in modo non lineare.
+Se proviamo a sostituire nel sistema il "valore magico" $\nu = 1/3$ che rende il modello esatto sia a taglio che a deformazione assiale, i termini $\frac{1}{2(1-(1/3)^2)}$ diventano $\frac{9}{16}$.
+Le equazioni si semplificano restituendo le eleganti formule storiche del metodo di Hrennikoff:
+$$k_1 = \frac{3 \cdot E \cdot t}{16 \cdot B} (3B^2 - H^2)$$
+$$k_2 = \frac{3 \cdot E \cdot t}{16 \cdot H} (3H^2 - B^2)$$
+Dimostrazione completata! La bellezza di questo approccio energetico è che si utilizza per mappare le proprietà costitutive in praticamente qualsiasi elemento macroscopico in ingegneria civile e meccanica.
+
+
+
+
+
+
+
+\end{document}
