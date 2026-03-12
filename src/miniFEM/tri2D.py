@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt  # per plottare il modello
 
 
 # Le variabili globali vengono viste solo dalle funzioni del modulo
-dof = 2 # gradi di liberta' per ogni nodo
+from .core import dof # gradi di liberta' per ogni nodo
 
 
 # aggiunge la matrice di rigidezza dell'elemento alla matrice di rigidezza K (globale)
@@ -45,24 +45,24 @@ def add_element_stiffness(K: np.ndarray, element, nodes) -> None:
             K[dof_map[r], dof_map[c]] += ke[r, c]
 
 
-# aggiunge il vincolo
-def add_constraint(K: np.ndarray, constraint, nodes) -> None:
-    id = constraint['id']
-    if constraint['u'] == True: # il grado di libertà orizzontale è vincolato
-        for i in range(len(nodes)*dof): K[id*dof+0,i] = 0; K[i,id*dof+0] = 0 # cancella tutte le righe e colonne associate al valore [id*dof+0,id*dof+0]
-        K[id*dof+0,id*dof+0] = 1
-    if constraint['v'] == True: # il grado di libertà verticale è vincolato
-        for i in range(len(nodes)*dof): K[id*dof+1,i] = 0; K[i,id*dof+1] = 0 # cancella tutte le righe e colonne associate al valore [id*dof+1,id*dof+1]
-        K[id*dof+1,id*dof+1] = 1
-    # DOVREBBE CONTROLLARE CHE ANCHE I RELATIVI VALORI DEL VETTORE f SIANO NULLI!!!!!
+# # aggiunge il vincolo
+# def add_constraint(K: np.ndarray, constraint, nodes) -> None:
+    # id = constraint['id']
+    # if constraint['u'] == True: # il grado di libertà orizzontale è vincolato
+        # for i in range(len(nodes)*dof): K[id*dof+0,i] = 0; K[i,id*dof+0] = 0 # cancella tutte le righe e colonne associate al valore [id*dof+0,id*dof+0]
+        # K[id*dof+0,id*dof+0] = 1
+    # if constraint['v'] == True: # il grado di libertà verticale è vincolato
+        # for i in range(len(nodes)*dof): K[id*dof+1,i] = 0; K[i,id*dof+1] = 0 # cancella tutte le righe e colonne associate al valore [id*dof+1,id*dof+1]
+        # K[id*dof+1,id*dof+1] = 1
+    # # DOVREBBE CONTROLLARE CHE ANCHE I RELATIVI VALORI DEL VETTORE f SIANO NULLI!!!!!
 
 
-# crea il vettore delle forze applicate
-# def create_forces(forces, nodes: dict[str,float]) -> np.ndarray: # funziona per Python >= 3.9
-def create_forces(forces, nodes) -> np.ndarray:
-    f = np.zeros((len(nodes)*dof,1))
-    for x in forces: f[x['id']*dof+0], f[x['id']*dof+1] = x['f']
-    return f
+# # crea il vettore delle forze applicate
+# # def create_forces(forces, nodes: dict[str,float]) -> np.ndarray: # funziona per Python >= 3.9
+# def create_forces(forces, nodes) -> np.ndarray:
+    # f = np.zeros((len(nodes)*dof,1))
+    # for x in forces: f[x['id']*dof+0], f[x['id']*dof+1] = x['f']
+    # return f
 
 
 
