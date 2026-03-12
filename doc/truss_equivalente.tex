@@ -2,6 +2,7 @@
 
 \usepackage[T1]{fontenc}
 \usepackage[italian]{babel}
+\usepackage{amsmath}
 \usepackage{tikz}
 
 
@@ -23,6 +24,22 @@ due elementi di rigidezza k3 dal nodo 1 al 3 e dal 2 al 4
 Non so se puo' aiutare, ma le tre condizioni per cui definire le tre costanti possono essere la deformazione assiale data da una forza di compressione, lo spanciamento dato da questa forza di compressione e una forza di taglio con equivalente deformazione gamma.
 \\
 Insomma, definire le costanti ki partendo da E,ni e dalle dimensioni B e H... }
+
+\begin{tikzpicture}
+\draw[latex-latex] (1,0) node[above]{$x$} -- (0,0) -- (0,1) node[right]{$y$};
+\draw[thick] (0,0) rectangle (3,2);
+\draw[thick] (0,0) -- (3,2) (3,0) -- (0,2);
+\draw[|<->|] (0,-0.3) -- node[below]{$B$} (3,-0.3);
+\draw[|<->|] (-0.3,0) -- node[left]{$H$} (-0.3,2);
+\draw (2,2) -- +(0.5,0.5) node[right]{$k_2 = EA_2$};
+\draw (3,1) -- +(0.5,0.5) node[right]{$k_1 = EA_1$};
+\draw (2.7,0.2) -- +(0.5,0.5) node[right]{$k_3 = EA_3$};
+\draw[fill=white] (0,0) circle (0.06);
+\draw[fill=white] (3,0) circle (0.06);
+\draw[fill=white] (3,2) circle (0.06);
+\draw[fill=white] (0,2) circle (0.06);
+\end{tikzpicture}
+
 
 \bigskip
 
@@ -49,9 +66,9 @@ Chiamiamo la lunghezza delle diagonali $D = \sqrt{B^2 + H^2}$.
 
 Se calcoliamo il contributo di rigidezza delle aste, notiamo subito un problema: le aste orizzontali e verticali non offrono alcuna resistenza al taglio (essendo incernierate e ortogonali). Tutta la rigidezza a taglio del sistema è affidata ai due elementi diagonali $k_3$. Allo stesso tempo, sono sempre i diagonali $k_3$ a governare l'accoppiamento tra le direzioni $x$ e $y$ (lo spanciamento).
 Se imponiamo la condizione di equivalenza al taglio, otteniamo:
-$$k_3 = \frac{E \cdot t}{2(1+\nu)} \frac{D^3}{B \cdot H}$$
+$$k_3 = \frac{E \cdot t}{4(1+\nu)} \frac{D^3}{B \cdot H}$$
 Se imponiamo la condizione di equivalenza allo spanciamento (effetto Poisson), otteniamo:
-$$k_3 = \frac{E \cdot \nu \cdot t}{1-\nu^2} \frac{D^3}{B \cdot H}$$
+$$k_3 = \frac{E \cdot \nu \cdot t}{2(1-\nu^2)} \frac{D^3}{B \cdot H}$$
 Affinché il tuo modello di 6 aste sia perfettamente equivalente al continuo 2D per tutte e tre le tue condizioni, queste due equazioni devono essere identiche. Risolvendo l'uguaglianza si ottiene:
 $$\frac{1}{2(1+\nu)} = \frac{\nu}{1-\nu^2} \rightarrow 1-\nu = 2\nu \rightarrow \nu = \frac{1}{3}$$
 Conclusione teorica: Un elemento continuo rettangolare può essere modellato in modo esatto da 6 elementi truss solo e soltanto se il materiale ha un coefficiente di Poisson $\nu = 1/3$ (che, fortunatamente, è molto vicino a quello di molti metalli, come l'alluminio o l'acciaio).
@@ -72,18 +89,22 @@ Aste diagonali (nodi 1-3, 2-4):
 $$k_3 = \frac{3 \cdot E \cdot t}{16 \cdot B \cdot H} D^3$$
 \textit{(Nota dimensionale: se le dimensioni geometriche impongono che ad esempio $3H^2 - B^2 < 0$, significa che l'asta orizzontale dovrebbe avere una rigidezza negativa. Questo limita l'uso di questo reticolo a rettangoli non troppo "allungati", idealmente con un rapporto d'aspetto $B/H$ vicino a 1)}.
 
+Bisogna inoltre notare che, per la definizione di $H$ e $B$ si richiede che l'elemento abbia una dimensione rettangolare.
+
 
 \subsection{Caso B: Soluzione Approssimata (per $\nu \neq 1/3$)}
 
 Se il tuo materiale ha un $\nu$ diverso da 1/3 (es. calcestruzzo $\nu=0.2$ o gomma $\nu=0.5$), non puoi soddisfare tutte e tre le condizioni contemporaneamente. La prassi nella modellazione a macro-elementi è privilegiare l'esattezza al taglio e alla deformazione assiale, accettando un piccolo errore sull'effettivo spanciamento (che il modello tratterà intrinsecamente come se fosse $1/3$).
 In questo caso, le formule diventano:
 Aste diagonali (per calibrare il Taglio $G$):
-$$k_3 = \frac{E \cdot t}{2(1+\nu)} \frac{D^3}{B \cdot H}$$
+$$k_3 = \frac{E \cdot t}{4(1+\nu)} \frac{D^3}{B \cdot H}$$
 Aste verticali (per calibrare la compressione in Y):
 $$k_1 = \frac{E \cdot t}{1+\nu} \left( \frac{B}{1-\nu} - \frac{H^2}{2B} \right)$$
 Aste orizzontali (per calibrare la compressione in X):
 $$k_2 = \frac{E \cdot t}{1+\nu} \left( \frac{H}{1-\nu} - \frac{B^2}{2H} \right)$$
 Vuoi che ti scriva un breve script in Python o MATLAB che assembla la matrice di rigidezza di queste 6 aste per confrontarla numericamente con la matrice di un vero elemento finito Quad4 continuo?
+
+
 
 
 \dotfill
@@ -111,6 +132,20 @@ Aste diagonali ($k_3$): sono le uniche a deformarsi assialmente. La lunghezza in
 Calcoliamo l'allungamento ($\Delta L$) usando la cinematica. L'allungamento di un'asta è pari alla proiezione dello spostamento relativo dei suoi nodi lungo la direzione dell'asta.
 Diagonale 1-3: L'asta è tesa. Lo spostamento del nodo 3 rispetto all'1 è orizzontale verso destra ($\gamma H$). Il coseno dell'angolo che la diagonale forma con la base è $\cos(\theta) = \frac{B}{D}$.
 $$\Delta L_{13} = \gamma H \cdot \frac{B}{D}$$
+
+\begin{tikzpicture}
+\draw (0,0) rectangle (3,2);
+\draw (0,0) -- (3,2);
+\draw[|<->|] (0,-0.3) -- node[below]{$B$} (3,-0.3);
+\draw[|<->|] (-0.3,0) -- node[left]{$H$} (-0.3,2);
+\draw[->] (0.6,0) arc(0:33:0.6) node[pos=0.4,right]{$\theta$};
+\draw (0,0) -- (5,2) -- (3,2);
+\draw[|<->|] (3,2.2) -- node[above]{$\gamma H$} (5,2.2);
+\draw (4.4,2) arc(180:200:0.6) node[pos=0.7,left]{\small $\sim \theta$};
+\draw (3,2) -- (3.3,1.3);
+\draw[|<->|] (5+0.1,2-0.2) -- node[below right]{$\gamma H \cos(\theta)$} (3.3+0.1,1.3-0.2);
+\end{tikzpicture}
+
 Diagonale 2-4: L'asta è compressa. Lo spostamento del nodo 4 rispetto al 2 è orizzontale verso destra ($\gamma H$). Il coseno è geometricamente lo stesso.
 $$\Delta L_{24} = -\gamma H \cdot \frac{B}{D}$$
 \subsection{Passo 3: L'Energia del reticolo a 6 aste}
@@ -139,7 +174,6 @@ Imponiamo contemporaneamente una deformazione assiale $\varepsilon_x$ in orizzon
 Per il continuo elastico isotropo, le tensioni in stato piano in funzione delle deformazioni sono:
 $$\sigma_x = \frac{E}{1-\nu^2} (\varepsilon_x + \nu \varepsilon_y)$$
 $$\sigma_y = \frac{E}{1-\nu^2} (\varepsilon_y + \nu \varepsilon_x)$$
-\textcolor{red}{Fare anche la versione "plane strain"}
 L'energia di deformazione elastica ($U_c$) nel volume $V = B \cdot H \cdot t$ è data da:
 $$U_c = \frac{1}{2} \int_V (\sigma_x \varepsilon_x + \sigma_y \varepsilon_y) \, dV$$
 Sostituendo le tensioni e moltiplicando per il volume, otteniamo l'energia totale del continuo:
@@ -207,6 +241,33 @@ $$k_2 = \frac{3 \cdot E \cdot t}{16 \cdot H} (3H^2 - B^2)$$
 Dimostrazione completata! La bellezza di questo approccio energetico è che si utilizza per mappare le proprietà costitutive in praticamente qualsiasi elemento macroscopico in ingegneria civile e meccanica.
 
 
+\section{Caso "plane strain"}
+
+Nel caso di deformazioni piane le equazioni del legame costitutivo sono
+$$
+\begin{bmatrix} \sigma_x \\ \sigma_y \end{bmatrix} = 
+\frac{E}{(1+\nu)(1-2\nu)}
+\begin{bmatrix}
+1-\nu & \nu \\
+\nu & 1-\nu
+\end{bmatrix}
+\begin{bmatrix} \varepsilon_x \\ \varepsilon_y \end{bmatrix}
+$$
+Da questo otteniamo l'energia interna di deformazione
+$$
+U_c = \frac{1}{2}\int_V (\sigma_x\varepsilon_x + \sigma_y\varepsilon_y) \; dV = 
+\frac{E}{2(1+\nu)(1-2\nu)}\left[ (1-\nu)\varepsilon_x^2 + (1-\nu)\varepsilon_y^2 + 2\nu\varepsilon_x\varepsilon_y \right] BHt
+$$
+dall'uguaglianza del termine $\varepsilon_x\varepsilon_y$ con l'energia del traliccio otteniamo la rigidezza $k_3$
+$$ k_3 = \frac{\nu E}{(1+\nu)(1-2\nu)} t \frac{D^3}{2BH} $$
+Dall'equivalenza con il taglio abbiamo
+$$
+\frac{1}{4(1+\nu)} = \frac{\nu}{2(1+\nu)(1-2\nu)} \rightarrow
+2\nu(1+\nu) = (1+\nu)(1-2\nu) \rightarrow
+2\nu = 1-2\nu \rightarrow
+\nu = \frac{1}{4}
+$$
+\textcolor{red}{Calcolare anche $k_1$ e $k_2$}
 
 
 
