@@ -6,7 +6,8 @@ import miniFEM as fem
 
 # 1. Definizione modello:
 nodes = [{'x':0, 'y':0}, {'x':1, 'y':0}, {'x':1, 'y':1}]
-elements = [{'i':0, 'j':1, 'k':2, 'E':210e3, 'ni':0.3, 't':0.1}]
+elements = [{'i':0, 'j':1, 'k':2, 'E':210e3, 'ni':0.3, 't':0.1}] # (tri2D)
+# elements = [{'i':0, 'j':2, 'E':210e3, 'A':0.1}, {'i':1, 'j':2, 'E':210e3, 'A':0.1}] # (truss2D)
 constraints = [{'id':0, 'u':True, 'v':True}, {'id':1, 'u':True, 'v':True}]
 forces = [{'id':2, 'f':[1,0]}]
 
@@ -21,7 +22,7 @@ for e in elements:
 
 # 4. Applicazione Vincoli:
 for c in constraints:
-    fem.add_constraint(K, f, c, len(nodes))
+    fem.add_constraint(K, f, c)
 
 # 5. Risoluzione (con matrici sparse):
 u = fem.solve_system(K, f)
