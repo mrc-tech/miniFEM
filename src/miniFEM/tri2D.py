@@ -7,20 +7,18 @@ import matplotlib.pyplot as plt  # per plottare il modello
 from .core import dof # gradi di liberta' per ogni nodo
 
 
-# aggiunge la matrice di rigidezza dell'elemento alla matrice di rigidezza K (globale)
 # def add_element_stiffness(K: np.ndarray, element: dict[str,float], nodes: dict[str,float]) -> None: # funziona per Python >= 3.9
 def add_element_stiffness(K: np.ndarray, element, nodes) -> None:
-    """
-    Aggiunge la matrice di rigidezza dell'elemento triangolare 2D (CST) alla matrice globale K
-    """
+    '''
+        Aggiunge la matrice di rigidezza dell'elemento triangolare 2D (CST) alla matrice globale K
+    '''
     i, j, k = element['i'], element['j'], element['k'] # nodi dell'elemento
     xi, yi = nodes[i]['x'], nodes[i]['y']
     xj, yj = nodes[j]['x'], nodes[j]['y']
     xk, yk = nodes[k]['x'], nodes[k]['y']
-    
-    E = element['E']
+    E  = element['E']
     ni = element['ni']
-    t = element['t'] # spessore dell'elemento
+    t  = element['t'] # spessore dell'elemento
     
     A = abs((xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj)) / 2) # area del triangolo (sempre positiva)
     if A == 0: raise ValueError("Triangolo degenerato con area zero!")

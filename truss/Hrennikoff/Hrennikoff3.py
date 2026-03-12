@@ -206,11 +206,11 @@ for i,n in enumerate(nodes):
     if n['y'] == maxY:
         forces.append({'id':i, 'f':[0,-1]})
 
-K = np.zeros((len(nodes)*dof, len(nodes)*dof)) # default: dtype=float64
-f = tri2D.create_forces(forces,nodes)
+K, f = mfem.init_system(len(nodes))
+mfem.create_forces(f, forces)
 for e in elements: tri2D.add_element_stiffness(K, e, nodes) # assembla la matrice di rigidezza K
-for c in constraints: tri2D.add_constraint(K, c, nodes) # aggiunge i vincoli (sempre alla matrice K)
-u = np.linalg.solve(K,f) # trova gli spostamenti invertendo la matrice K (uguale a "u = np.linalg.inv(K) @ f", ma 
+for c in constraints: mfem.add_constraint(K, f, c) # aggiunge i vincoli (sempre alla matrice K)
+u = mfem.solve_system(K,f) # trova gli spostamenti invertendo la matrice K (uguale a "u = np.linalg.inv(K) @ f", ma 
 for i,_ in enumerate(nodes):
     nodes[i]['u'] = u[i*dof+0].item()
     nodes[i]['v'] = u[i*dof+1].item()

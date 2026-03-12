@@ -17,7 +17,7 @@ fem.create_forces(f, forces)
 
 # 3. Assemblaggio Matrice:
 for e in elements:
-    fem.tri2D.add_element_stiffness(K, e, nodes)  # Se è un triangolo CST
+    fem.tri2D.add_element_stiffness(K, e, nodes) # Se è un triangolo CST
     # fem.truss2D.add_element_stiffness(K, e, nodes) # Se fosse una biella
 
 # 4. Applicazione Vincoli:
@@ -27,9 +27,12 @@ for c in constraints:
 # 5. Risoluzione (con matrici sparse):
 u = fem.solve_system(K, f)
 
-# # 6. Salvataggio risultati nei nodi:
-# for i, _ in enumerate(nodes):
-    # nodes[i]['u'] = u[i*2 + 0].item()
-    # nodes[i]['v'] = u[i*2 + 1].item()
+# 6. Salvataggio risultati nei nodi:
+for i, _ in enumerate(nodes):
+    nodes[i]['u'] = u[i*2 + 0].item()
+    nodes[i]['v'] = u[i*2 + 1].item()
 
+# 7. output:
 print(u)
+fem.tri2D.plot_displacement(nodes, elements, scale=1000) # tri2D
+# fem.truss2D.plot_element_forces(nodes, fem.truss2D.compute_element_forces(elements, nodes)) # truss2D

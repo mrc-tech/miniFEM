@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt  # per plottare il modello
 
 
 # Le variabili globali vengono viste solo dalle funzioni del modulo
-dof = 2 # gradi di liberta' per ogni nodo
+from .core import dof # gradi di liberta' per ogni nodo
 
 
-# aggiunge la matrice di rigidezza dell'elemento alla matrice di rigidezza K (globale)
 # def add_element_stiffness(K: np.ndarray, element: dict[str,float], nodes: dict[str,float]) -> None: # funziona per Python >= 3.9
 def add_element_stiffness(K: np.ndarray, element, nodes) -> None:
+    '''
+        aggiunge la matrice di rigidezza dell'elemento alla matrice di rigidezza K (globale)
+    '''
     i = element['i']; j = element['j'] # id dei nodi di estremità (i, j)
     L = np.sqrt(pow(nodes[j]['x']-nodes[i]['x'],2) + pow(nodes[j]['y']-nodes[i]['y'],2)) # lunghezza dell'elemento
     theta = np.arctan2(nodes[j]['y']-nodes[i]['y'], nodes[j]['x']-nodes[i]['x']) # in gradi: theta_deg = (np.degrees(theta) + 360) % 360
@@ -99,6 +101,7 @@ def plot_element_forces(nodes, element_forces) -> None:
         )
 
     ax.set_aspect('equal')
+    plt.show()
 
 
 def plot_forces(nodes, forces) -> None:
